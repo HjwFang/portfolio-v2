@@ -5,9 +5,14 @@
 @theme {
   --color-background: #fffeee;
   --color-foreground: #502e2e;
+  --color-light-brown: #c4a484;
   --font-general: var(--font-general), "General Sans", sans-serif;
   --font-quicksand: "Quicksand", sans-serif;
   --font-cjk: "Noto Sans SC", "Noto Sans JP", sans-serif;
+}
+
+* {
+  cursor: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSI4IiBjeT0iOCIgcj0iNCIgZmlsbD0iIzUwMmUyZSIvPjwvc3ZnPg==") 8 8, auto !important;
 }
 
 body {

@@ -51,24 +51,27 @@ class Dot {
             (mouseX - this.x) * (mouseX - this.x) + (mouseY - this.y) * (mouseY - this.y)
         );
 
-        let radius = 1; // Default size
-        let opacity = 0.2; // Default opacity
+        let size = 3; // Default size
+        let opacity = 0.3; // Default opacity
 
         if (distFromMouse < hoverRadius) {
             const effectIntensity = (hoverRadius - distFromMouse) / hoverRadius;
-            radius = 1 + effectIntensity * 0.5; // Increases from 1 to 1.5
+            size = 3 + effectIntensity * 3; // Increases from 3 to 6
             opacity = 0.2 + effectIntensity * 0.6; // Increases from 0.2 up to 0.8
         }
 
-        return { radius, opacity };
+        return { size, opacity };
     }
 
-    draw(ctx: CanvasRenderingContext2D, radius: number, opacity: number) {
+    draw(ctx: CanvasRenderingContext2D, size: number, opacity: number) {
         ctx.beginPath();
-        ctx.arc(this.x, this.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(80, 46, 46, ${opacity})`;
-        ctx.fill();
-        ctx.closePath();
+        ctx.moveTo(this.x - size, this.y);
+        ctx.lineTo(this.x + size, this.y);
+        ctx.moveTo(this.x, this.y - size);
+        ctx.lineTo(this.x, this.y + size);
+        ctx.strokeStyle = `rgba(80, 46, 46, ${opacity})`;
+        ctx.lineWidth = 0.3;
+        ctx.stroke();
     }
 }
 
@@ -132,8 +135,8 @@ export default function InteractiveBackground() {
 
             for (let i = 0; i < dots.length; i++) {
                 const dot = dots[i];
-                const { radius, opacity } = dot.update(mouseX, mouseY);
-                dot.draw(ctx, radius, opacity);
+                const { size, opacity } = dot.update(mouseX, mouseY);
+                dot.draw(ctx, size, opacity);
             }
 
             animationFrameId = requestAnimationFrame(animate);

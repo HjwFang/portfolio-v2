@@ -8,6 +8,7 @@ This document serves as the source of truth for the design elements used in the 
 | :--- | :--- | :--- |
 | **Cream (Background)** | `#fffeee` | The primary background color for the application. Gives a warm, off-white/cream paper feel. |
 | **Dark Brown (Primary)** | `#502e2e` | Used for all typography, logos, and graphic blocks. Acts as the primary contrast color. |
+| **Light Brown (Border)** | `#c4a484` | Used as a border color for the Chinese text box. |
 
 ## 🔤 Typography
 
@@ -38,7 +39,7 @@ This document serves as the source of truth for the design elements used in the 
 *   **Font Family:** `General Sans Variable`, `Noto Sans JP`, `Noto Sans SC`, `sans-serif`
 *   **Weight:** Bold
 *   **Size:** `48px`
-*   **Style:** Cut-out effect (the container has a `bg-[#502e2e]` background, and the text creates a transparent cut-out so the cream background shines through).
+*   **Style:** Cut-out effect (the container has a `bg-[#502e2e]` background, and the text creates a transparent cut-out so the cream background shines through). Border is implemented via the `<CrossingCornerBorder />` component, drawing four `1px` light brown (`#c4a484`) lines (top, bottom, left, right) that extend `6px` beyond their intersections, creating a crossing corner effect.
 
 ## 📐 Spacing & Layout Constraints
 *   **Logo/Hero Layout:** The header composition sits at the bottom-left of the viewport.
