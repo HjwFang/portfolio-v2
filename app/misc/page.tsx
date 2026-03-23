@@ -2,7 +2,7 @@ import SectionContent from "@/components/SectionContent";
 
 export default function MiscPage() {
   return (
-    <div className="min-h-screen bg-background px-[5vw] lg:px-[89px]">
+    <div className="min-h-screen px-[5vw] lg:px-[89px]">
       <SectionContent aria-label="Miscellaneous">
         <div className="flex items-center gap-3 mb-10">
           <span className="size-3 rounded-full bg-foreground shrink-0" aria-hidden />
@@ -10,7 +10,7 @@ export default function MiscPage() {
             misc
           </h2>
         </div>
-        <p className="font-quicksand font-light text-foreground/60 text-base max-w-xl m-0">
+        <p className="font-quicksand font-light text-foreground/60 text-base max-w-lg m-0">
           Nothing here yet.
         </p>
       </SectionContent>

@@ -4,47 +4,60 @@ interface CrossingCornerBorderProps {
     children: React.ReactNode;
     className?: string;
     color?: string;
-    bleed?: number;
-    thickness?: number;
+    bleed?: number | string;
+    thickness?: number | string;
     /** Length of each arm at the corner cross; both arms use this so corners stay symmetric. */
-    cornerLength?: number;
+    cornerLength?: number | string;
 }
 
 export default function CrossingCornerBorder({
     children,
     className = "",
     color = "#c4a484",
-    bleed = 2,
-    thickness = 0.5,
+    bleed = 6,
+    thickness = 1,
     cornerLength,
 }: CrossingCornerBorderProps) {
     const L = cornerLength ?? bleed;
     const edge = { backgroundColor: color };
+
+    const containerStyle = {
+        '--border-color': color,
+    } as React.CSSProperties;
+
+    const edgeStyle = { backgroundColor: 'var(--border-color)' };
+
+    // Helper to ensure values have units
+    const toCSS = (val: number | string) => typeof val === 'number' ? `${val}px` : val;
+    const L_css = toCSS(L);
+    const T_css = toCSS(thickness);
+    const negL_css = typeof L === 'number' ? `${-L}px` : `calc(-1 * ${L})`;
+
     return (
-        <div className={`relative ${className}`}>
-            {/* Edge segments between corners (flush with box) */}
-            <div className="absolute pointer-events-none" style={{ ...edge, top: 0, left: L, right: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, bottom: 0, left: L, right: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, left: 0, top: L, bottom: L, width: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, right: 0, top: L, bottom: L, width: thickness }} />
-            {/* Corner L's on box: vertex at corner, arms length L along edges */}
-            <div className="absolute pointer-events-none top-0 left-0" style={{ ...edge, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none top-0 left-0" style={{ ...edge, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none top-0 right-0" style={{ ...edge, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none top-0 right-0" style={{ ...edge, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none bottom-0 left-0" style={{ ...edge, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none bottom-0 left-0" style={{ ...edge, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none bottom-0 right-0" style={{ ...edge, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none bottom-0 right-0" style={{ ...edge, width: thickness, height: L }} />
-            {/* Bleed: corner arms extending outward (symmetric length L) */}
-            <div className="absolute pointer-events-none" style={{ ...edge, top: 0, left: -L, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, top: -L, left: 0, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, top: 0, right: -L, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, top: -L, right: 0, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, bottom: 0, left: -L, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, bottom: -L, left: 0, width: thickness, height: L }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, bottom: 0, right: -L, width: L, height: thickness }} />
-            <div className="absolute pointer-events-none" style={{ ...edge, bottom: -L, right: 0, width: thickness, height: L }} />
+        <div className={`relative ${className}`} style={containerStyle}>
+            {/* Main Edge Lines (Full length of container) */}
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, top: 0, left: 0, width: '100%', height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, bottom: 0, left: 0, width: '100%', height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, left: 0, top: 0, height: '100%', width: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, left: '100%', top: 0, height: '100%', width: T_css, transform: 'translateX(-100%)' }} />
+
+            {/* Bleed Arms (Extending outward from corners) */}
+            {/* Top-Left */}
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, top: 0, left: negL_css, width: L_css, height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, top: negL_css, left: 0, width: T_css, height: L_css }} />
+
+            {/* Top-Right */}
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, top: 0, right: negL_css, width: L_css, height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, top: negL_css, right: 0, width: T_css, height: L_css }} />
+
+            {/* Bottom-Left */}
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, bottom: 0, left: negL_css, width: L_css, height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, bottom: negL_css, left: 0, width: T_css, height: L_css }} />
+
+            {/* Bottom-Right */}
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, bottom: 0, right: negL_css, width: L_css, height: T_css }} />
+            <div className="absolute pointer-events-none" style={{ ...edgeStyle, bottom: negL_css, right: 0, width: T_css, height: L_css }} />
+
             {children}
         </div>
     );

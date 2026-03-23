@@ -6,9 +6,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 
 const ITEMS = [
-  { num: "01", label: "experiences and projects", href: "/experience" },
+  { num: "01", label: "projects & experiences", href: "/experience" },
   { num: "02", label: "about me", href: "/about" },
-  { num: "03", label: "miscellaneous", href: "/misc" },
+  { num: "03", label: "misc gallery", href: "/misc" },
 ] as const;
 
 const CYCLE_MS = 5000;
@@ -139,7 +139,11 @@ export default function HeroNav() {
               style={{ top: slideRect.top, height: slideRect.height }}
               aria-hidden
             >
-            <CrossingCornerBorder className="h-full w-full bg-foreground">
+              <CrossingCornerBorder
+                bleed="clamp(2px, 0.208vw, 4px)"
+                thickness="clamp(1px, 0.052vw, 1px)"
+                className="h-full w-full bg-foreground"
+              >
                 <div className="h-full w-full" />
               </CrossingCornerBorder>
             </div>
@@ -156,14 +160,14 @@ export default function HeroNav() {
                 {ITEMS.map((item, index) => (
                   <div
                     key={item.href}
-                    className="w-full flex items-center justify-between gap-6 px-3 py-2"
+                    className="w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)]"
                   >
-                    <span className="flex items-center gap-2 font-general font-medium tracking-tight">
-                      <span className="tabular-nums">{item.num}</span>
+                    <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">
+                      <span className="tabular-nums text-[clamp(14px,0.833vw,16px)]">{item.num}</span>
                       <span>{item.label}</span>
                     </span>
                     {(hoveredIndex === index || activeIndex === index) && (
-                      <span className="font-quicksand text-[13px] opacity-70">»»</span>
+                      <span className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70">»»</span>
                     )}
                   </div>
                 ))}
@@ -193,17 +197,17 @@ export default function HeroNav() {
                 }}
                 className={
                   isActive
-                    ? "w-full flex items-center justify-between gap-6 bg-transparent px-3 py-2 text-foreground transition-colors cursor-pointer"
-                    : "w-full flex items-center justify-between gap-6 px-3 py-2 text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
+                    ? "w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)] text-foreground transition-colors cursor-pointer"
+                    : "w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
                 }
               >
-                <span className="flex items-center gap-2 font-general font-medium tracking-tight">
-                  <span className="tabular-nums">{item.num}</span>
+                <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">
+                  <span className="tabular-nums text-[clamp(14px,0.833vw,16px)]">{item.num}</span>
                   <span>{item.label}</span>
                 </span>
                 {(hoveredIndex === index || isActive) && (
                   <span
-                    className="font-quicksand text-[13px] opacity-70"
+                    className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70"
                     aria-hidden
                   >
                     »»
