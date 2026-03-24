@@ -4,14 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
+import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 
 const ITEMS = [
   { num: "01", label: "projects & experiences", href: "/experience" },
   { num: "02", label: "about me", href: "/about" },
   { num: "03", label: "misc gallery", href: "/misc" },
 ] as const;
-
-const CYCLE_MS = 5000;
 
 function isFormElement(target: EventTarget | null): boolean {
   if (!target || !(target instanceof HTMLElement)) return false;
@@ -34,15 +33,11 @@ export default function HeroNav() {
     pathname === "/experience" ? 0 : pathname === "/about" ? 1 : pathname === "/misc" ? 2 : -1;
   const [selectedIndex, setSelectedIndex] = useState(pathIndex >= 0 ? pathIndex : 0);
   const activeIndex = isHome ? selectedIndex : pathIndex >= 0 ? pathIndex : 0;
-  const cycleStartRef = useRef(Date.now());
-  const nowRef = useRef(Date.now());
-  const pendingAdvanceRef = useRef(false);
-  const [, setTick] = useState(0);
+  const heroNavHoverCtx = useHeroNavHoverContext();
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [slideRect, setSlideRect] = useState<{ top: number; height: number } | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
-  const [isPaused, setIsPaused] = useState(false);
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -60,44 +55,10 @@ export default function HeroNav() {
     if (pathIndex >= 0) setSelectedIndex(pathIndex);
   }, [pathIndex]);
 
-  // Reset cycle start whenever the active selection changes
+  // Keep attraction state aligned with the current highlighted nav item.
   useEffect(() => {
-    cycleStartRef.current = Date.now();
-  }, [activeIndex]);
-
-  const advanceCycle = () => {
-    cycleStartRef.current = Date.now();
-    setSelectedIndex((i) => (i + 1) % ITEMS.length);
-  };
-
-  // Drive progress bar and section advance from the same clock (rAF) so they stay in sync.
-  // When we hit 100%, defer advance to next frame so the bar is visible at full before reset.
-  // When paused (section selected), do not advance the cycle.
-  useEffect(() => {
-    if (!isHome) return;
-    let raf = 0;
-    const tick = () => {
-      const currentTime = Date.now();
-      nowRef.current = currentTime;
-      if (!isPaused) {
-        if (pendingAdvanceRef.current) {
-          pendingAdvanceRef.current = false;
-          advanceCycle();
-        } else if (currentTime - cycleStartRef.current >= CYCLE_MS) {
-          pendingAdvanceRef.current = true;
-        }
-        setTick((t) => t + 1);
-      }
-      raf = requestAnimationFrame(tick);
-    };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [isHome, isPaused]);
-
-  const resetCycleTimer = () => {
-    if (!isHome) return;
-    cycleStartRef.current = Date.now();
-  };
+    heroNavHoverCtx?.setHoveredIndex(activeIndex);
+  }, [activeIndex, heroNavHoverCtx]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -105,23 +66,16 @@ export default function HeroNav() {
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((i) => (i - 1 + ITEMS.length) % ITEMS.length);
-        resetCycleTimer();
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((i) => (i + 1) % ITEMS.length);
-        resetCycleTimer();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const progressWidth =
-    isHome
-      ? isPaused
-        ? "0%"
-        : `${Math.max(0, Math.min(100, ((nowRef.current - cycleStartRef.current) / CYCLE_MS) * 100))}%`
-      : `${((activeIndex + 1) / ITEMS.length) * 100}%`;
+  const progressWidth = `${((activeIndex + 1) / ITEMS.length) * 100}%`;
 
   return (
     <nav
@@ -160,7 +114,7 @@ export default function HeroNav() {
                 {ITEMS.map((item, index) => (
                   <div
                     key={item.href}
-                    className="w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)]"
+                    className="w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)]"
                   >
                     <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">
                       <span className="tabular-nums text-[clamp(14px,0.833vw,16px)]">{item.num}</span>
@@ -187,18 +141,16 @@ export default function HeroNav() {
                 onMouseEnter={() => {
                   setSelectedIndex(index);
                   setHoveredIndex(index);
-                  cycleStartRef.current = Date.now();
-                  setIsPaused(true);
+                  heroNavHoverCtx?.setHoveredIndex(index);
                 }}
                 onMouseLeave={() => {
                   setHoveredIndex(-1);
-                  setIsPaused(false);
-                  cycleStartRef.current = Date.now();
+                  heroNavHoverCtx?.setHoveredIndex(activeIndex);
                 }}
                 className={
                   isActive
-                    ? "w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)] text-foreground transition-colors cursor-pointer"
-                    : "w-full flex items-center justify-between gap-[clamp(8px,1.25vw,24px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(6px,0.416vw,8px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
+                    ? "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)] text-foreground transition-colors cursor-pointer"
+                    : "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
                 }
               >
                 <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">

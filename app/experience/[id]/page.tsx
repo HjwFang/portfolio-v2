@@ -10,7 +10,7 @@ const PROJECT_DETAILS: Record<string, any> = {
     skills: "ui/ux design, product_design, user_research",
     overview: "Ataraxia is a streetwear brand I founded to support young adults transitioning into new stages of life. The brand combines bold streetwear aesthetics with subtle reminders to maintain inner calm.",
     websiteUrl: "#",
-    imageUrl: "/atrx.png",
+    imageUrl: "/ataraxia-brand.png",
   },
   quickpos: {
     title: "QuickPOS",

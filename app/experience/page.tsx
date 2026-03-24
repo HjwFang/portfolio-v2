@@ -9,7 +9,7 @@ const PROJECTS = [
     title: "Ataraxia",
     date: "2025",
     description: "A streetwear brand combining bold aesthetics with inner calm.",
-    image: "/atrx.png",
+    image: "/ataraxia-brand.png",
   },
   {
     id: "quickpos",
@@ -24,16 +24,16 @@ export default function ExperiencePage() {
   return (
     <div className="min-h-screen px-[5vw] lg:px-[89px]">
       <SectionContent aria-label="projects & experiences">
-        <div className="flex items-center gap-3 mb-10">
+        <div className="flex items-center gap-3 mb-8">
           <span className="size-3 rounded-full bg-foreground shrink-0" aria-hidden />
           <h2 className="font-general font-medium text-foreground text-2xl lg:text-3xl tracking-tight m-0">
             projects & experiences
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 lg:gap-x-20 gap-y-16 max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 lg:gap-x-10 gap-y-6 max-w-5xl">
           {PROJECTS.map((p) => (
-            <div key={p.id} className="flex flex-col gap-4 max-w-[420px]">
+            <div key={p.id} className="flex flex-col gap-3 max-w-[360px]">
               <Link 
                 href={`/experience/${p.id}`} 
                 className="group block transition-transform duration-300 hover:-translate-y-2"
@@ -58,7 +58,7 @@ export default function ExperiencePage() {
               
               <div className="flex items-center justify-between gap-3 mt-1">
                 <Link href={`/experience/${p.id}`} className="hover:underline underline-offset-4 decoration-current transition-all">
-                  <h3 className="font-general font-semibold text-foreground text-xl lg:text-2xl tracking-tight m-0">
+                  <h3 className="font-general font-semibold text-foreground text-lg lg:text-xl tracking-tight m-0">
                     {p.title}
                   </h3>
                 </Link>
@@ -67,7 +67,7 @@ export default function ExperiencePage() {
                 </span>
               </div>
               
-              <p className="font-quicksand font-light text-foreground/80 text-base m-0 leading-relaxed">
+              <p className="font-quicksand font-light text-foreground/80 text-sm m-0 leading-relaxed">
                 {p.description}
               </p>
             </div>
