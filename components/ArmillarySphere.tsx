@@ -5,7 +5,7 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { useThemeForegroundLinearColor } from "@/components/useThemeColor";
 import {
-    applyAttractionYaw,
+    applyAttractionRotation,
     ATTRACTION_IDLE_YAW_RAD_PER_SEC,
     type HeroAttractionInteractionRef,
 } from "@/components/heroAttractionYaw";
@@ -120,7 +120,7 @@ export default function ArmillarySphere({ interactionRef }: ArmillarySphereProps
         const g = groupRef.current;
         if (g) {
             if (interactionRef) {
-                applyAttractionYaw(g, interactionRef.current, delta);
+                applyAttractionRotation(g, interactionRef.current, delta);
             } else {
                 g.rotation.y += delta * ATTRACTION_IDLE_YAW_RAD_PER_SEC;
             }

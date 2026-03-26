@@ -9,13 +9,15 @@ import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { useThemeForegroundLinearColor } from "@/components/useThemeColor";
 import {
-    applyAttractionYaw,
+    applyAttractionRotation,
+    ATTRACTION_DRAG_DIAGONAL_ROLL_FACTOR,
     ATTRACTION_DRAG_SENSITIVITY,
+    ATTRACTION_DRAG_TWIST_FACTOR,
     type HeroAttractionInteractionRef,
 } from "@/components/heroAttractionYaw";
 
 /** Root scale on icosphere.glb; pattern freq uses 1/this so scanlines match mesh size. */
-const ICOSPHERE_DISPLAY_SCALE = 0.72;
+const ICOSPHERE_DISPLAY_SCALE = 0.9;
 
 function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInteractionRef }) {
     const { scene } = useGLTF("/icosphere.glb");
@@ -57,6 +59,22 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
       varying vec3 vViewDir;
       varying vec3 vLocalPos;
 
+      float hash31(vec3 p) {
+        p = fract(p * 0.1031);
+        p += dot(p, p.yzx + 33.33);
+        return fract((p.x + p.y) * p.z);
+      }
+
+      vec3 orthogonal(vec3 n) {
+        return normalize(abs(n.z) < 0.999 ? vec3(-n.y, n.x, 0.0) : vec3(0.0, -n.z, n.y));
+      }
+
+      float crispStripe(float coord, float width) {
+        float distToCenter = abs(fract(coord) - 0.5);
+        float aa = max(fwidth(coord), 1e-4);
+        return 1.0 - smoothstep(width - aa, width + aa, distToCenter);
+      }
+
       void main() {
         vec3 baseColor = uColor;
 
@@ -64,17 +82,29 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
         float facing = clamp(dot(normalize(vNormal), normalize(vViewDir)), 0.0, 1.0);
         float fresnel = pow(1.0 - facing, 2.0);
 
-        // Object-space: bands follow surface; each face gets its own diagonal from interpolated local pos.
-        float scanFreq = 105.0 * uPatternScale;
-        float scan = sin(vLocalPos.y * scanFreq + uTime * 2.0);
-        float scanPeaks = smoothstep(0.75, 1.0, scan);
-        float scanAlpha = scanPeaks * 0.15;
+        // Derive per-face plane + hash so each triangle has stable, crisp line orientation.
+        vec3 dpdx = dFdx(vLocalPos);
+        vec3 dpdy = dFdy(vLocalPos);
+        vec3 faceN = normalize(cross(dpdx, dpdy));
+        vec3 faceKey = floor(faceN * 251.0 + 0.5);
+        float faceHash = hash31(faceKey);
 
-        float hatchFreq = 52.0 * uPatternScale;
-        vec3 lp = vLocalPos;
-        float diag = sin((lp.x - lp.y) * hatchFreq + uTime * 0.35);
-        float hatchPeaks = smoothstep(0.78, 1.0, diag);
-        float hatchAlpha = hatchPeaks * 0.12;
+        vec3 t = orthogonal(faceN);
+        vec3 b = normalize(cross(faceN, t));
+        vec2 faceUv = vec2(dot(vLocalPos, t), dot(vLocalPos, b));
+
+        float angleA = faceHash * 6.28318530718;
+        float angleB = angleA + 1.57079632679;
+
+        float freqA = 118.0 * uPatternScale;
+        float freqB = 72.0 * uPatternScale;
+        float stripeA = dot(faceUv, vec2(cos(angleA), sin(angleA))) * freqA + uTime * 1.8;
+        float stripeB = dot(faceUv, vec2(cos(angleB), sin(angleB))) * freqB - uTime * 0.55;
+
+        float lineA = crispStripe(stripeA, 0.075);
+        float lineB = crispStripe(stripeB + faceHash * 11.0, 0.062);
+        float scanAlpha = lineA * 0.14;
+        float hatchAlpha = lineB * 0.11;
 
         // Flicker: brief opacity drop to 0.4 for ~80ms every few seconds.
         float period = 3.0;
@@ -89,7 +119,7 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
         alpha *= flickerFactor;
 
         // Slightly brighten rim while keeping the brown hologram on-theme.
-        vec3 color = baseColor * (0.62 + fresnel * 2.0 + hatchPeaks * 0.15);
+        vec3 color = baseColor * (0.62 + fresnel * 2.0 + lineB * 0.15);
 
         gl_FragColor = vec4(color, alpha);
       }
@@ -161,7 +191,7 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
             mat.color.copy(themeColor);
         }
         if (groupRef.current) {
-            applyAttractionYaw(groupRef.current, interactionRef.current, delta);
+            applyAttractionRotation(groupRef.current, interactionRef.current, delta);
         }
     });
 
@@ -186,7 +216,12 @@ export default function HeroAttraction() {
     const attractionInteractionRef = useRef({
         dragging: false,
         lastClientX: 0,
-        pendingYawDelta: 0,
+        lastClientY: 0,
+        prevSegDx: 0,
+        prevSegDy: 0,
+        pendingX: 0,
+        pendingY: 0,
+        pendingZ: 0,
     });
 
     const onAttractionPointerDown = (e: React.PointerEvent) => {
@@ -194,14 +229,26 @@ export default function HeroAttraction() {
         const ir = attractionInteractionRef.current;
         ir.dragging = true;
         ir.lastClientX = e.clientX;
+        ir.lastClientY = e.clientY;
+        ir.prevSegDx = 0;
+        ir.prevSegDy = 0;
     };
 
     const onAttractionPointerMove = (e: React.PointerEvent) => {
         const ir = attractionInteractionRef.current;
         if (!ir.dragging) return;
         const dx = e.clientX - ir.lastClientX;
+        const dy = e.clientY - ir.lastClientY;
         ir.lastClientX = e.clientX;
-        ir.pendingYawDelta += dx * ATTRACTION_DRAG_SENSITIVITY;
+        ir.lastClientY = e.clientY;
+        const s = ATTRACTION_DRAG_SENSITIVITY;
+        ir.pendingY += dx * s;
+        ir.pendingX -= dy * s;
+        const twist = ir.prevSegDx * dy - ir.prevSegDy * dx;
+        ir.pendingZ +=
+            twist * ATTRACTION_DRAG_TWIST_FACTOR + dx * dy * ATTRACTION_DRAG_DIAGONAL_ROLL_FACTOR;
+        ir.prevSegDx = dx;
+        ir.prevSegDy = dy;
     };
 
     const onAttractionPointerUp = (e: React.PointerEvent) => {
@@ -282,7 +329,7 @@ export default function HeroAttraction() {
                                     near={0.1}
                                     far={100}
                                 />
-                                <group scale={2.15}>
+                                <group scale={2.55}>
                                     <ArmillarySphere interactionRef={attractionInteractionRef} />
                                 </group>
                             </Canvas>

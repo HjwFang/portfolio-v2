@@ -11,13 +11,6 @@ const PROJECTS = [
     description: "A streetwear brand combining bold aesthetics with inner calm.",
     image: "/ataraxia-brand.png",
   },
-  {
-    id: "quickpos",
-    title: "QuickPOS",
-    date: "Ongoing",
-    description: "Modern POS and restaurant workflows helping teams run smoother.",
-    image: "/tsac.png",
-  },
 ];
 
 export default function ExperiencePage() {
@@ -58,11 +51,13 @@ export default function ExperiencePage() {
               
               <div className="flex items-center justify-between gap-3 mt-1">
                 <Link href={`/experience/${p.id}`} className="hover:underline underline-offset-4 decoration-current transition-all">
-                  <h3 className="font-general font-semibold text-foreground text-lg lg:text-xl tracking-tight m-0">
+                  <h3
+                    className={`font-general ${p.id === "ataraxia" ? "font-medium" : "font-semibold"} text-foreground text-lg lg:text-xl tracking-tight m-0`}
+                  >
                     {p.title}
                   </h3>
                 </Link>
-                <span className="font-quicksand font-medium text-[#FF8A00] text-[clamp(10px,0.7vw,13px)] border border-[#FF8A00]/60 rounded-full px-3 py-0.5 tabular-nums">
+                <span className="font-quicksand font-medium text-[#502e2e] text-[clamp(10px,0.7vw,13px)] border border-[#502e2e]/60 rounded-full px-3 py-0.5 tabular-nums">
                   {p.date}
                 </span>
               </div>

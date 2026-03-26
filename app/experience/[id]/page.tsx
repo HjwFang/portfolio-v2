@@ -12,15 +12,6 @@ const PROJECT_DETAILS: Record<string, any> = {
     websiteUrl: "#",
     imageUrl: "/ataraxia-brand.png",
   },
-  quickpos: {
-    title: "QuickPOS",
-    timeline: "jan 2024 - ongoing",
-    tools: "next.js, supabase, prisma, stripe",
-    skills: "fullstack development, systems design, payments integration",
-    overview: "A comprehensive point-of-sale system tailored for modern restaurant workflows. It features real-time order synchronization between counter and kitchen, integrated payments through Stripe, and a robust backend built with Supabase and Prisma. Designed to help teams run smoother services and manage complex workflows with ease.",
-    websiteUrl: "#",
-    imageUrl: "/tsac.png",
-  },
 };
 
 export default function ProjectPage({ params }: { params: { id: string } }) {
