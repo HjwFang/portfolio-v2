@@ -209,9 +209,18 @@ export default function HeroAttraction() {
     const heroNavHoverCtx = useHeroNavHoverContext();
     const hoveredIndex = heroNavHoverCtx?.hoveredIndex ?? -1;
     const isProjectsHovered = hoveredIndex === 0;
+    const isAboutHovered = hoveredIndex === 1;
     const isMiscGalleryHovered = hoveredIndex === 2;
 
     const isAnyAttractionHovered = isProjectsHovered || isMiscGalleryHovered;
+
+    const navSection = (() => {
+        if (hoveredIndex === 0) return { x: "1", label: "projects & experiences" };
+        if (hoveredIndex === 1) return { x: "2", label: "about me" };
+        if (hoveredIndex === 2) return { x: "3", label: "misc gallery" };
+        // Default to the first section if context hasn't set yet.
+        return { x: "1", label: "projects & experiences" };
+    })();
 
     const attractionInteractionRef = useRef({
         dragging: false,
@@ -277,6 +286,13 @@ export default function HeroAttraction() {
                             isAnyAttractionHovered ? "opacity-70" : "opacity-50"
                         }`}
                     />
+
+                    {/* Bottom-left “nav section” label */}
+                    <div className="pointer-events-none absolute bottom-4 left-4 z-[30]">
+                        <div className="font-quicksand font-light text-foreground/60 text-[clamp(11px,0.677vw,13px)] tracking-wider">
+                            0{navSection.x} {navSection.label}
+                        </div>
+                    </div>
 
                     {isProjectsHovered ? (
                         <>
