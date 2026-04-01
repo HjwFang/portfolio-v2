@@ -10,9 +10,7 @@ import * as THREE from "three";
 import { useThemeForegroundLinearColor } from "@/components/useThemeColor";
 import {
     applyAttractionRotation,
-    ATTRACTION_DRAG_DIAGONAL_ROLL_FACTOR,
     ATTRACTION_DRAG_SENSITIVITY,
-    ATTRACTION_DRAG_TWIST_FACTOR,
     type HeroAttractionInteractionRef,
 } from "@/components/heroAttractionYaw";
 
@@ -224,44 +222,73 @@ export default function HeroAttraction() {
 
     const attractionInteractionRef = useRef({
         dragging: false,
-        lastClientX: 0,
-        lastClientY: 0,
-        prevSegDx: 0,
-        prevSegDy: 0,
+        prevArcX: 0,
+        prevArcY: 0,
+        prevArcZ: 1,
+        hasPrevArc: false,
         pendingX: 0,
         pendingY: 0,
         pendingZ: 0,
     });
 
+    const pointerToArcball = (e: React.PointerEvent) => {
+        const rect = e.currentTarget.getBoundingClientRect();
+        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+        const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+        const len2 = nx * nx + ny * ny;
+        if (len2 <= 1) {
+            return { x: nx, y: ny, z: Math.sqrt(1 - len2) };
+        }
+        const invLen = 1 / Math.sqrt(len2);
+        return { x: nx * invLen, y: ny * invLen, z: 0 };
+    };
+
     const onAttractionPointerDown = (e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         const ir = attractionInteractionRef.current;
         ir.dragging = true;
-        ir.lastClientX = e.clientX;
-        ir.lastClientY = e.clientY;
-        ir.prevSegDx = 0;
-        ir.prevSegDy = 0;
+        const v = pointerToArcball(e);
+        ir.prevArcX = v.x;
+        ir.prevArcY = v.y;
+        ir.prevArcZ = v.z;
+        ir.hasPrevArc = true;
     };
 
     const onAttractionPointerMove = (e: React.PointerEvent) => {
         const ir = attractionInteractionRef.current;
-        if (!ir.dragging) return;
-        const dx = e.clientX - ir.lastClientX;
-        const dy = e.clientY - ir.lastClientY;
-        ir.lastClientX = e.clientX;
-        ir.lastClientY = e.clientY;
-        const s = ATTRACTION_DRAG_SENSITIVITY;
-        ir.pendingY += dx * s;
-        ir.pendingX -= dy * s;
-        const twist = ir.prevSegDx * dy - ir.prevSegDy * dx;
-        ir.pendingZ +=
-            twist * ATTRACTION_DRAG_TWIST_FACTOR + dx * dy * ATTRACTION_DRAG_DIAGONAL_ROLL_FACTOR;
-        ir.prevSegDx = dx;
-        ir.prevSegDy = dy;
+        if (!ir.dragging || !ir.hasPrevArc) return;
+        const curr = pointerToArcball(e);
+
+        const px = ir.prevArcX;
+        const py = ir.prevArcY;
+        const pz = ir.prevArcZ;
+        const cx = curr.x;
+        const cy = curr.y;
+        const cz = curr.z;
+
+        // Axis in view-space from previous-to-current arcball vectors.
+        const ax = py * cz - pz * cy;
+        const ay = pz * cx - px * cz;
+        const az = px * cy - py * cx;
+        const axisLen = Math.hypot(ax, ay, az);
+        if (axisLen > 1e-6) {
+            const dot = Math.max(-1, Math.min(1, px * cx + py * cy + pz * cz));
+            const angle = Math.atan2(axisLen, dot) * ATTRACTION_DRAG_SENSITIVITY;
+            const invAxisLen = 1 / axisLen;
+            ir.pendingX += ax * invAxisLen * angle;
+            ir.pendingY += ay * invAxisLen * angle;
+            ir.pendingZ += az * invAxisLen * angle;
+        }
+
+        ir.prevArcX = cx;
+        ir.prevArcY = cy;
+        ir.prevArcZ = cz;
     };
 
     const onAttractionPointerUp = (e: React.PointerEvent) => {
-        attractionInteractionRef.current.dragging = false;
+        const ir = attractionInteractionRef.current;
+        ir.dragging = false;
+        ir.hasPrevArc = false;
         try {
             e.currentTarget.releasePointerCapture(e.pointerId);
         } catch {

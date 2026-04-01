@@ -1,26 +1,20 @@
 import type { MutableRefObject } from "react";
-import type * as THREE from "three";
+import * as THREE from "three";
 
 export const ATTRACTION_IDLE_YAW_RAD_PER_SEC = 0.085;
 /** Higher = drag delta catches up to pointer faster (still smoothed across frames). */
 export const ATTRACTION_DRAG_SMOOTH_RATE = 28;
-/** Pointer X → rotation around Y; pointer Y → rotation around X (inverted in handler). */
-export const ATTRACTION_DRAG_SENSITIVITY = 0.014;
-/**
- * Roll (Z) from curved drags: 2D cross product of consecutive move segments
- * (straight lines stay at zero; circles and arcs build twist).
- */
-export const ATTRACTION_DRAG_TWIST_FACTOR = 0.00014;
-/** Extra roll when moving diagonally (dx·dy); axis-aligned moves stay pitch/yaw-only. */
-export const ATTRACTION_DRAG_DIAGONAL_ROLL_FACTOR = 0.000055;
+/** Scales arcball drag angle. */
+export const ATTRACTION_DRAG_SENSITIVITY = 1.2;
 
 export type HeroAttractionInteractionState = {
     dragging: boolean;
-    lastClientX: number;
-    lastClientY: number;
-    /** Previous pointer segment (px), for twist / roll. */
-    prevSegDx: number;
-    prevSegDy: number;
+    /** Previous arcball vector in view space. */
+    prevArcX: number;
+    prevArcY: number;
+    prevArcZ: number;
+    hasPrevArc: boolean;
+    /** Pending rotation vector (axis * angle). */
     pendingX: number;
     pendingY: number;
     pendingZ: number;
@@ -33,6 +27,9 @@ export function applyAttractionRotation(
     interaction: HeroAttractionInteractionState,
     delta: number,
 ) {
+    const tempAxis = new THREE.Vector3();
+    const tempQuat = new THREE.Quaternion();
+
     const smooth = 1 - Math.exp(-ATTRACTION_DRAG_SMOOTH_RATE * delta);
     const ax = interaction.pendingX * smooth;
     const ay = interaction.pendingY * smooth;
@@ -40,10 +37,17 @@ export function applyAttractionRotation(
     interaction.pendingX -= ax;
     interaction.pendingY -= ay;
     interaction.pendingZ -= az;
-    group.rotation.x += ax;
-    group.rotation.y += ay;
-    group.rotation.z += az;
+
+    const dragAngle = Math.hypot(ax, ay, az);
+    if (dragAngle > 1e-6) {
+        tempAxis.set(ax / dragAngle, ay / dragAngle, az / dragAngle);
+        tempQuat.setFromAxisAngle(tempAxis, dragAngle);
+        // Apply in parent/world space for screen-space arcball feel.
+        group.quaternion.premultiply(tempQuat);
+    }
+
     if (!interaction.dragging) {
-        group.rotation.y += delta * ATTRACTION_IDLE_YAW_RAD_PER_SEC;
+        tempQuat.setFromAxisAngle(tempAxis.set(0, 1, 0), delta * ATTRACTION_IDLE_YAW_RAD_PER_SEC);
+        group.quaternion.premultiply(tempQuat);
     }
 }
