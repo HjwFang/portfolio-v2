@@ -1,15 +1,13 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 
 const ITEMS = [
-  { num: "01", label: "projects & experiences", href: "/experience" },
-  { num: "02", label: "about me", href: "/about" },
-  { num: "03", label: "misc gallery", href: "/misc" },
+  { num: "01", label: "projects & experiences" },
+  { num: "02", label: "about me" },
+  { num: "03", label: "misc gallery" },
 ] as const;
 
 function isFormElement(target: EventTarget | null): boolean {
@@ -27,17 +25,31 @@ function isFormElement(target: EventTarget | null): boolean {
 }
 
 export default function HeroNav() {
-  const pathname = usePathname();
-  const isHome = pathname === "/";
-  const pathIndex =
-    pathname === "/experience" ? 0 : pathname === "/about" ? 1 : pathname === "/misc" ? 2 : -1;
-  const [selectedIndex, setSelectedIndex] = useState(pathIndex >= 0 ? pathIndex : 0);
-  const activeIndex = isHome ? selectedIndex : pathIndex >= 0 ? pathIndex : 0;
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const activeIndex = selectedIndex;
   const heroNavHoverCtx = useHeroNavHoverContext();
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [slideRect, setSlideRect] = useState<{ top: number; height: number } | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
+  const swipeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    swipeAudioRef.current = new Audio("/sounds/driken5482-swipe-236674.mp3");
+    swipeAudioRef.current.volume = 0.4;
+  }, []);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (swipeAudioRef.current) {
+      swipeAudioRef.current.currentTime = 0;
+      swipeAudioRef.current.play().catch(() => {});
+    }
+  }, [selectedIndex]);
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -50,10 +62,6 @@ export default function HeroNav() {
     const height = Math.round(itemRect.height);
     setSlideRect({ top, height });
   }, [activeIndex]);
-
-  useEffect(() => {
-    if (pathIndex >= 0) setSelectedIndex(pathIndex);
-  }, [pathIndex]);
 
   // Keep attraction state aligned with the current highlighted nav item.
   useEffect(() => {
@@ -113,11 +121,11 @@ export default function HeroNav() {
               >
                 {ITEMS.map((item, index) => (
                   <div
-                    key={item.href}
-                    className="w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)]"
+                    key={item.num}
+                    className="w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)]"
                   >
-                    <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">
-                      <span className="tabular-nums text-[clamp(14px,0.833vw,16px)]">{item.num}</span>
+                    <span className="flex items-center gap-2 font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
+                      <span className="tabular-nums text-[0.8em] opacity-50">{item.num}</span>
                       <span>{item.label}</span>
                     </span>
                     {(hoveredIndex === index || activeIndex === index) && (
@@ -132,49 +140,45 @@ export default function HeroNav() {
         <ul ref={listRef} className="relative z-10 flex flex-col">
           {ITEMS.map((item, index) => {
             const isActive = index === activeIndex;
-            const link = (
-              <Link
-                href={item.href}
-                id={`nav-item-${index}`}
-                role="option"
-                aria-selected={isActive}
-                onMouseEnter={() => {
-                  setSelectedIndex(index);
-                  setHoveredIndex(index);
-                  heroNavHoverCtx?.setHoveredIndex(index);
-                }}
-                onMouseLeave={() => {
-                  setHoveredIndex(-1);
-                  heroNavHoverCtx?.setHoveredIndex(activeIndex);
-                }}
-                className={
-                  isActive
-                    ? "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)] text-foreground transition-colors cursor-pointer"
-                    : "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(4px,0.3vw,6px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
-                }
-              >
-                <span className="flex items-center gap-2 font-general font-medium tracking-tight text-[clamp(14px,0.937vw,18px)]">
-                  <span className="tabular-nums text-[clamp(14px,0.833vw,16px)]">{item.num}</span>
-                  <span>{item.label}</span>
-                </span>
-                {(hoveredIndex === index || isActive) && (
-                  <span
-                    className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70"
-                    aria-hidden
-                  >
-                    »»
-                  </span>
-                )}
-              </Link>
-            );
             return (
               <li
-                key={item.href}
+                key={item.num}
                 ref={(el) => {
                   itemRefs.current[index] = el;
                 }}
               >
-                {link}
+                <div
+                  id={`nav-item-${index}`}
+                  role="option"
+                  aria-selected={isActive}
+                  onMouseEnter={() => {
+                    setSelectedIndex(index);
+                    setHoveredIndex(index);
+                    heroNavHoverCtx?.setHoveredIndex(index);
+                  }}
+                  onMouseLeave={() => {
+                    setHoveredIndex(-1);
+                    heroNavHoverCtx?.setHoveredIndex(activeIndex);
+                  }}
+                    className={
+                      isActive
+                        ? "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground transition-colors cursor-pointer"
+                        : "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
+                    }
+                >
+                  <span className="flex items-center gap-2 font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
+                    <span className="tabular-nums text-[0.8em] opacity-50">{item.num}</span>
+                    <span>{item.label}</span>
+                  </span>
+                  {(hoveredIndex === index || isActive) && (
+                    <span
+                      className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70"
+                      aria-hidden
+                    >
+                      »»
+                    </span>
+                  )}
+                </div>
               </li>
             );
           })}

@@ -19,11 +19,11 @@ export default function SocialIcon({ href, icon, disabled, tooltip, isExternal =
             title={tooltip}
         >
             <CrossingCornerBorder 
-                bleed="clamp(3px, 0.3125vw, 6px)"
-                thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="bg-[#502e2e] group-hover:bg-[#7a4b4b] group-hover:[--border-color:#dec7b0] transition-all duration-300 flex items-center justify-center p-[clamp(4px,0.416vw,8px)]"
+                bleed="clamp(2px, 0.208vw, 4px)"
+                thickness="clamp(1px, 0.052vw, 1px)"
+                className="bg-[#502e2e] group-hover:bg-[#7a4b4b] group-hover:[--border-color:#dec7b0] transition-all duration-300 flex items-center justify-center p-[clamp(5px,0.35vw,7px)] aspect-square"
             >
-                <div className="flex items-center justify-center size-[clamp(28px,2.5vw,48px)]">
+                <div className="flex items-center justify-center size-[clamp(16px,1.1vw,20px)]">
                     {icon}
                 </div>
             </CrossingCornerBorder>

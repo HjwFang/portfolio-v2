@@ -2,7 +2,6 @@
 
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
-import ArmillarySphere from "@/components/ArmillarySphere";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { PerspectiveCamera, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef } from "react";
@@ -206,11 +205,7 @@ useGLTF.preload("/icosphere.glb");
 export default function HeroAttraction() {
     const heroNavHoverCtx = useHeroNavHoverContext();
     const hoveredIndex = heroNavHoverCtx?.hoveredIndex ?? -1;
-    const isProjectsHovered = hoveredIndex === 0;
-    const isAboutHovered = hoveredIndex === 1;
-    const isMiscGalleryHovered = hoveredIndex === 2;
-
-    const isAnyAttractionHovered = isProjectsHovered || isMiscGalleryHovered;
+    const isAnyAttractionHovered = hoveredIndex !== -1;
 
     const navSection = (() => {
         if (hoveredIndex === 0) return { x: "1", label: "projects & experiences" };
@@ -230,6 +225,44 @@ export default function HeroAttraction() {
         pendingY: 0,
         pendingZ: 0,
     });
+
+    // --- Audio Scaffolding ---
+    const swingAudioRef = useRef<HTMLAudioElement | null>(null);
+    const velocityRef = useRef(0);
+
+    useEffect(() => {
+        // Initialize audio objects
+        const swing = new Audio("/sounds/dragon-studio-hum-390295.mp3");
+        swing.volume = 0;
+        swingAudioRef.current = swing;
+
+        return () => {
+            swing.pause();
+        };
+    }, []);
+
+    const updateAudioIntensity = (velocity: number) => {
+        if (!swingAudioRef.current) return;
+
+        // Lowered threshold to 0.05 for easier triggering
+        if (velocity > 0.05) {
+            const basePitch = 0.9;
+            const pitchScale = velocity * 1.5;
+            const randomPitchOffset = (Math.random() - 0.5) * 0.15;
+            
+            const intensity = Math.min(1.0, (velocity - 0.05) * 5);
+            const randomVolumeOffset = (Math.random() * 0.1);
+
+            if (swingAudioRef.current.paused || swingAudioRef.current.currentTime > 0.3) {
+                swingAudioRef.current.playbackRate = Math.max(0.5, Math.min(2.5, basePitch + pitchScale + randomPitchOffset));
+                swingAudioRef.current.volume = Math.min(1.0, intensity + randomVolumeOffset);
+                swingAudioRef.current.currentTime = 0;
+                swingAudioRef.current.play().catch((err) => {
+                    console.warn("Audio play failed:", err);
+                });
+            }
+        }
+    };
 
     const pointerToArcball = (e: React.PointerEvent) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -252,6 +285,14 @@ export default function HeroAttraction() {
         ir.prevArcY = v.y;
         ir.prevArcZ = v.z;
         ir.hasPrevArc = true;
+
+        // Warm up audio to unlock browser autoplay policy
+        if (swingAudioRef.current && swingAudioRef.current.paused) {
+            swingAudioRef.current.volume = 0;
+            swingAudioRef.current.play().then(() => {
+                swingAudioRef.current?.pause();
+            }).catch(() => {});
+        }
     };
 
     const onAttractionPointerMove = (e: React.PointerEvent) => {
@@ -278,6 +319,10 @@ export default function HeroAttraction() {
             ir.pendingX += ax * invAxisLen * angle;
             ir.pendingY += ay * invAxisLen * angle;
             ir.pendingZ += az * invAxisLen * angle;
+
+            // Track velocity for SFX intensity
+            velocityRef.current = angle;
+            updateAudioIntensity(angle);
         }
 
         ir.prevArcX = cx;
@@ -289,6 +334,7 @@ export default function HeroAttraction() {
         const ir = attractionInteractionRef.current;
         ir.dragging = false;
         ir.hasPrevArc = false;
+
         try {
             e.currentTarget.releasePointerCapture(e.pointerId);
         } catch {
@@ -301,7 +347,7 @@ export default function HeroAttraction() {
             <CrossingCornerBorder
                 bleed="clamp(3px, 0.3125vw, 6px)"
                 thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="w-full lg:w-full lg:h-[70vh] aspect-4/3 lg:aspect-auto"
+                className="w-full aspect-square max-h-[35vh] lg:max-h-[32vh]"
             >
                 <div
                     className={`w-full h-full flex items-center justify-center relative group overflow-hidden transition-colors duration-300 ${
@@ -321,88 +367,56 @@ export default function HeroAttraction() {
                         </div>
                     </div>
 
-                    {isProjectsHovered ? (
-                        <>
-                            <div
-                                className="absolute inset-0 z-[5] cursor-grab touch-none select-none active:cursor-grabbing"
-                                onPointerDown={onAttractionPointerDown}
-                                onPointerMove={onAttractionPointerMove}
-                                onPointerUp={onAttractionPointerUp}
-                                onPointerCancel={onAttractionPointerUp}
-                                onPointerLeave={(e) => {
-                                    if (attractionInteractionRef.current.dragging) {
-                                        onAttractionPointerUp(e);
-                                    }
-                                }}
+                    {/* Attraction Content: Constant mounting to avoid blinks */}
+                    <div
+                        className={`absolute inset-0 z-0 transition-opacity duration-700 ease-in-out ${
+                            isAnyAttractionHovered ? "opacity-100" : "opacity-0 pointer-events-none"
+                        }`}
+                    >
+                        <div
+                            className="absolute inset-0 z-[5] cursor-grab touch-none select-none active:cursor-grabbing"
+                            onPointerDown={onAttractionPointerDown}
+                            onPointerMove={onAttractionPointerMove}
+                            onPointerUp={onAttractionPointerUp}
+                            onPointerCancel={onAttractionPointerUp}
+                            onPointerLeave={(e) => {
+                                if (attractionInteractionRef.current.dragging) {
+                                    onAttractionPointerUp(e);
+                                }
+                            }}
+                        />
+                        <Canvas
+                            className="absolute inset-0 z-0 pointer-events-none"
+                            gl={{
+                                antialias: true,
+                                toneMapping: THREE.ACESFilmicToneMapping,
+                                toneMappingExposure: 1.4,
+                            }}
+                        >
+                            <PerspectiveCamera
+                                makeDefault
+                                position={[0, 0, 6.5]}
+                                fov={30}
+                                near={0.1}
+                                far={100}
                             />
-                            <Canvas
-                                className="absolute inset-0 z-0 pointer-events-none"
-                                gl={{
-                                    antialias: true,
-                                    toneMapping: THREE.ACESFilmicToneMapping,
-                                    toneMappingExposure: 1.4,
-                                }}
-                            >
-                                <PerspectiveCamera
-                                    makeDefault
-                                    position={[0, 0, 6.5]}
-                                    fov={30}
-                                    near={0.1}
-                                    far={100}
-                                />
-                                <IcosphereModel interactionRef={attractionInteractionRef} />
-                            </Canvas>
+                            <IcosphereModel interactionRef={attractionInteractionRef} />
+                        </Canvas>
+                    </div>
 
-                            <div className="relative z-20 flex flex-col items-center gap-4 pointer-events-none" />
-                        </>
-                    ) : isMiscGalleryHovered ? (
-                        <>
-                            <Canvas
-                                className="absolute inset-0 z-0 pointer-events-none"
-                                gl={{
-                                    antialias: true,
-                                    toneMapping: THREE.ACESFilmicToneMapping,
-                                    toneMappingExposure: 1.2,
-                                }}
-                            >
-                                <PerspectiveCamera
-                                    makeDefault
-                                    position={[0, 0, 4.8]}
-                                    fov={38}
-                                    near={0.1}
-                                    far={100}
-                                />
-                                <group scale={2.55}>
-                                    <ArmillarySphere interactionRef={attractionInteractionRef} />
-                                </group>
-                            </Canvas>
+                    {/* Default Dot State */}
+                    <div
+                        className={`relative z-20 flex flex-col items-center gap-4 transition-opacity duration-700 ease-in-out ${
+                            isAnyAttractionHovered ? "opacity-0 pointer-events-none" : "opacity-100"
+                        }`}
+                    >
+                        <div
+                            className="size-12 lg:size-16 rounded-full border border-foreground/10 opacity-80 flex items-center justify-center transition-all duration-300"
+                        >
+                            <div className="size-2 lg:size-3 rounded-full transition-colors duration-300 bg-foreground/20" />
+                        </div>
+                    </div>
 
-                            <div
-                                className="absolute inset-0 z-[15] cursor-grab touch-none select-none active:cursor-grabbing"
-                                onPointerDown={onAttractionPointerDown}
-                                onPointerMove={onAttractionPointerMove}
-                                onPointerUp={onAttractionPointerUp}
-                                onPointerCancel={onAttractionPointerUp}
-                                onPointerLeave={(e) => {
-                                    if (attractionInteractionRef.current.dragging) {
-                                        onAttractionPointerUp(e);
-                                    }
-                                }}
-                            />
-
-                            <div className="relative z-20 flex flex-col items-center gap-4 pointer-events-none" />
-                        </>
-                    ) : (
-                        <>
-                            <div className="relative z-20 flex flex-col items-center gap-4">
-                                <div
-                                    className="size-12 lg:size-16 rounded-full border border-foreground/10 opacity-80 flex items-center justify-center transition-all duration-300"
-                                >
-                                    <div className="size-2 lg:size-3 rounded-full transition-colors duration-300 bg-foreground/20" />
-                                </div>
-                            </div>
-                        </>
-                    )}
                 </div>
             </CrossingCornerBorder>
         </div>

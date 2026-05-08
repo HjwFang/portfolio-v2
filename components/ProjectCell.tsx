@@ -27,17 +27,17 @@ export default function ProjectCell({
     <div className="flex flex-col gap-10 mb-24 last:mb-0">
       {imageUrl && (
         <CrossingCornerBorder 
-          bleed="8px"
-          thickness="2.5px"
-          className="text-foreground"
+          bleed="6px"
+          thickness="1.5px"
+          className="text-foreground/20"
         >
-          <div className="w-full overflow-hidden relative group">
+          <div className="w-full overflow-hidden relative group bg-transparent">
             <Image
               src={imageUrl}
               alt={title || "Project Image"}
               width={1600}
               height={900}
-              className="w-full h-auto block"
+              className="w-full h-auto block grayscale-[0.2] group-hover:grayscale-0 transition-[filter] duration-500"
               priority
             />
           </div>
