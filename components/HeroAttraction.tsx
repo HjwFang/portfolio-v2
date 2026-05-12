@@ -226,42 +226,73 @@ export default function HeroAttraction() {
         pendingZ: 0,
     });
 
-    // --- Audio Scaffolding ---
+    // --- Drag hum: loop + smoothed envelope (no clip restarts / random jumps). ---
     const swingAudioRef = useRef<HTMLAudioElement | null>(null);
-    const velocityRef = useRef(0);
+    const dragActiveForAudioRef = useRef(false);
+    const audioPeakRef = useRef(0);
+    const audioDisplayRef = useRef(0);
+    const audioRafRef = useRef<number | null>(null);
+
+    /** Maps arcball step angle (~0–0.3 typical) into a 0–1-ish drive for the hum. */
+    const ANGLE_TO_AUDIO_PEAK = 10;
+    const AUDIO_PEAK_DECAY = 0.93;
+    const AUDIO_DISPLAY_LERP = 0.16;
 
     useEffect(() => {
-        // Initialize audio objects
         const swing = new Audio("/sounds/dragon-studio-hum-390295.mp3");
+        swing.loop = true;
         swing.volume = 0;
         swingAudioRef.current = swing;
 
         return () => {
+            if (audioRafRef.current != null) {
+                cancelAnimationFrame(audioRafRef.current);
+                audioRafRef.current = null;
+            }
             swing.pause();
         };
     }, []);
 
-    const updateAudioIntensity = (velocity: number) => {
-        if (!swingAudioRef.current) return;
+    const ensureAudioSmoothingLoop = () => {
+        if (audioRafRef.current != null) return;
 
-        // Lowered threshold to 0.05 for easier triggering
-        if (velocity > 0.05) {
-            const basePitch = 0.9;
-            const pitchScale = velocity * 1.5;
-            const randomPitchOffset = (Math.random() - 0.5) * 0.15;
-            
-            const intensity = Math.min(1.0, (velocity - 0.05) * 5);
-            const randomVolumeOffset = (Math.random() * 0.1);
+        const tick = () => {
+            const swing = swingAudioRef.current;
+            audioPeakRef.current *= AUDIO_PEAK_DECAY;
+            const target = audioPeakRef.current;
+            audioDisplayRef.current += (target - audioDisplayRef.current) * AUDIO_DISPLAY_LERP;
 
-            if (swingAudioRef.current.paused || swingAudioRef.current.currentTime > 0.3) {
-                swingAudioRef.current.playbackRate = Math.max(0.5, Math.min(2.5, basePitch + pitchScale + randomPitchOffset));
-                swingAudioRef.current.volume = Math.min(1.0, intensity + randomVolumeOffset);
-                swingAudioRef.current.currentTime = 0;
-                swingAudioRef.current.play().catch((err) => {
-                    console.warn("Audio play failed:", err);
-                });
+            if (swing) {
+                const d = audioDisplayRef.current;
+                if (d > 0.012) {
+                    if (swing.paused) {
+                        swing.play().catch(() => {});
+                    }
+                    swing.volume = Math.min(0.42, d * 0.5);
+                    swing.playbackRate = 0.9 + d * 0.28;
+                } else {
+                    swing.volume = 0;
+                }
             }
-        }
+
+            const keepGoing =
+                dragActiveForAudioRef.current ||
+                audioPeakRef.current > 0.004 ||
+                audioDisplayRef.current > 0.015;
+            if (keepGoing) {
+                audioRafRef.current = requestAnimationFrame(tick);
+            } else {
+                audioRafRef.current = null;
+            }
+        };
+
+        audioRafRef.current = requestAnimationFrame(tick);
+    };
+
+    const bumpDragAudioFromAngle = (angle: number) => {
+        const bump = Math.min(1, angle * ANGLE_TO_AUDIO_PEAK);
+        audioPeakRef.current = Math.max(audioPeakRef.current, bump);
+        ensureAudioSmoothingLoop();
     };
 
     const pointerToArcball = (e: React.PointerEvent) => {
@@ -278,6 +309,7 @@ export default function HeroAttraction() {
 
     const onAttractionPointerDown = (e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);
+        dragActiveForAudioRef.current = true;
         const ir = attractionInteractionRef.current;
         ir.dragging = true;
         const v = pointerToArcball(e);
@@ -320,9 +352,7 @@ export default function HeroAttraction() {
             ir.pendingY += ay * invAxisLen * angle;
             ir.pendingZ += az * invAxisLen * angle;
 
-            // Track velocity for SFX intensity
-            velocityRef.current = angle;
-            updateAudioIntensity(angle);
+            bumpDragAudioFromAngle(angle);
         }
 
         ir.prevArcX = cx;
@@ -334,6 +364,8 @@ export default function HeroAttraction() {
         const ir = attractionInteractionRef.current;
         ir.dragging = false;
         ir.hasPrevArc = false;
+        dragActiveForAudioRef.current = false;
+        ensureAudioSmoothingLoop();
 
         try {
             e.currentTarget.releasePointerCapture(e.pointerId);

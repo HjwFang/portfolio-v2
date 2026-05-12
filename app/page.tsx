@@ -29,8 +29,8 @@ const EXPERIENCES = [
     description: "Founded and led a streetwear brand, managing product design with Adobe Illustrator and driving growth through social media marketing.",
   },
   {
-    id: "peths",
-    title: "PETHS Student Council",
+    id: "trudeau-sac",
+    title: "Trudeau Student Activities Council",
     date: "May 2024 – Jun 2025",
     subtitle: "Head of Publicity",
     description: "Directed publicity initiatives and managed social media presence, fostering community engagement through leadership and marketing.",
@@ -54,17 +54,17 @@ function ExperienceCard({ title, date, subtitle, description }: (typeof EXPERIEN
         <span className="font-general font-medium text-foreground text-[clamp(11px,0.833vw,14px)] leading-snug truncate">
           {title}
         </span>
-        <span className="font-quicksand font-light text-foreground/40 text-[clamp(8px,0.5vw,10px)] whitespace-nowrap shrink-0 tabular-nums">
+        <span className="font-quicksand font-light text-foreground/65 text-[clamp(8px,0.5vw,10px)] whitespace-nowrap shrink-0 tabular-nums">
           {date}
         </span>
       </div>
 
       {/* Subtitle & description */}
       <div className="flex flex-col gap-1">
-        <span className="font-quicksand font-medium text-foreground/60 text-[clamp(10px,0.677vw,12px)] tracking-wide">
+        <span className="font-quicksand font-medium text-foreground/75 text-[clamp(10px,0.677vw,12px)] tracking-wide">
           {subtitle}
         </span>
-        <p className="font-quicksand font-light text-foreground/40 text-[clamp(9px,0.625vw,11px)] leading-snug line-clamp-2">
+        <p className="font-quicksand font-light text-foreground/60 text-[clamp(9px,0.625vw,11px)] leading-snug line-clamp-2">
           {description}
         </p>
       </div>

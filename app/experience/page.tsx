@@ -19,8 +19,8 @@ const PROJECTS = [
     image: "/ataraxia-brand.png",
   },
   {
-    id: "peths",
-    title: "PETHS Student Council",
+    id: "trudeau-sac",
+    title: "Trudeau Student Activities Council",
     date: "2024 – 2025",
     description: "Leading publicity and digital presence for the student community.",
     image: "/tsac.png",
@@ -71,12 +71,12 @@ export default function ExperiencePage() {
                     {p.title}
                   </h3>
                 </Link>
-                <span className="font-quicksand font-medium text-foreground/40 text-[clamp(10px,0.7vw,12px)] border border-foreground/10 rounded-full px-3 py-0.5 tabular-nums">
+                <span className="font-quicksand font-medium text-foreground/70 text-[clamp(10px,0.7vw,12px)] border border-foreground/15 rounded-full px-3 py-0.5 tabular-nums">
                   {p.date}
                 </span>
               </div>
               
-              <p className="font-quicksand font-light text-foreground/50 text-sm m-0 leading-relaxed max-w-[90%]">
+              <p className="font-quicksand font-light text-foreground/65 text-sm m-0 leading-relaxed max-w-[90%]">
                 {p.description}
               </p>
             </div>

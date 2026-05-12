@@ -21,12 +21,12 @@ const PROJECT_DETAILS: Record<string, any> = {
     websiteUrl: "#",
     imageUrl: "/ataraxia-brand.png",
   },
-  peths: {
-    title: "PETHS Student Council",
+  "trudeau-sac": {
+    title: "Trudeau Student Activities Council",
     timeline: "may 2024 - jun 2025",
     tools: "social media, leadership, marketing",
     skills: "publicity, community_engagement, branding",
-    overview: "As Head of Publicity, I managed the student council's public image and social media presence, driving engagement and communication for the entire student body.",
+    overview: "As Head of Publicity, I managed the student activities council's public image and social media presence, driving engagement and communication for the entire student body.",
     websiteUrl: "#",
     imageUrl: "/tsac.png",
   },
