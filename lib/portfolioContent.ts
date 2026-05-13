@@ -17,6 +17,21 @@ export type PortfolioDetail = {
   imageUrl: string;
 };
 
+/** QuickPOS experience card + detail hero. */
+export const EXPERIENCE_QUICKPOS_IMAGE_SRC = "/experience-quickpos.png" as const;
+
+/** TSAC experience card + detail hero. */
+export const EXPERIENCE_TSAC_LOGO_SRC = "/experience-tsac-logo.png" as const;
+
+/** Ataraxia experience card + detail hero (built from `favicon.png`, white canvas). */
+export const EXPERIENCE_ATARAXIA_IMAGE_SRC = "/experience-ataraxia.png" as const;
+
+/** WatsApp project card + detail hero. */
+export const PROJECT_WATSAPP_IMAGE_SRC = "/project-watsapp.png" as const;
+
+/** UniCook project card + detail hero (wordmark on white). */
+export const PROJECT_UNICOOK_LOGO_SRC = "/project-unicook-logo.png" as const;
+
 export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {
     id: "quickpos",
@@ -25,7 +40,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     subtitle: "Software Engineer Intern",
     description:
       "Software engineering for POS-adjacent systems and RAG-enabled B2B tools—building and shipping features alongside the team, with attention to reliability and clarity for merchants and internal operators.",
-    image: "/quickpos-experience.png",
+    image: EXPERIENCE_QUICKPOS_IMAGE_SRC,
   },
   {
     id: "ataraxia",
@@ -34,7 +49,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     subtitle: "Founder",
     description:
       "Founded and led a streetwear brand, owning visual identity and product presentation while growing the audience through social and community touchpoints.",
-    image: "/ataraxia-brand.png",
+    image: EXPERIENCE_ATARAXIA_IMAGE_SRC,
   },
   {
     id: "trudeau-sac",
@@ -43,7 +58,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     subtitle: "Head of Publicity",
     description:
       "Directed publicity and digital presence for the student body—campaigns, content rhythm, and channels that kept engagement high across the academic year.",
-    image: "/tsac.png",
+    image: EXPERIENCE_TSAC_LOGO_SRC,
   },
 ];
 
@@ -55,7 +70,7 @@ export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
     subtitle: "Product & UX",
     description:
       "Product design for a Waterloo course-community app: onboarding, course chats, study groups, and attachment flows—mobile-first layouts tuned for clarity between classes.",
-    image: "/watsapp.png",
+    image: PROJECT_WATSAPP_IMAGE_SRC,
   },
   {
     id: "unicook",
@@ -64,7 +79,7 @@ export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
     subtitle: "Product & UX",
     description:
       "Cooking competition platform for university students: match flow, ELO rankings, and clearer journeys across cook, submit, and rank.",
-    image: "/unicook.png",
+    image: PROJECT_UNICOOK_LOGO_SRC,
   },
 ];
 
@@ -77,7 +92,7 @@ export const EXPERIENCE_DETAILS: Record<string, PortfolioDetail> = {
     overview:
       "As a Software Engineer Intern at QuickPOS, I contributed to POS-adjacent and RAG-enabled B2B products—implementing features, debugging production issues, and coordinating with teammates so releases stayed dependable and understandable for merchants and internal users.",
     websiteUrl: "#",
-    imageUrl: "/quickpos-experience.png",
+    imageUrl: EXPERIENCE_QUICKPOS_IMAGE_SRC,
   },
   ataraxia: {
     title: "Ataraxia Apparel",
@@ -87,7 +102,7 @@ export const EXPERIENCE_DETAILS: Record<string, PortfolioDetail> = {
     overview:
       "Ataraxia is a streetwear brand I founded to support young adults transitioning into new stages of life. The brand combines bold streetwear aesthetics with subtle reminders to maintain inner calm.",
     websiteUrl: "#",
-    imageUrl: "/ataraxia-brand.png",
+    imageUrl: EXPERIENCE_ATARAXIA_IMAGE_SRC,
   },
   "trudeau-sac": {
     title: "Trudeau Student Activities Council",
@@ -97,7 +112,7 @@ export const EXPERIENCE_DETAILS: Record<string, PortfolioDetail> = {
     overview:
       "As Head of Publicity, I managed the student activities council's public image and social media presence, driving engagement and communication for the entire student body.",
     websiteUrl: "#",
-    imageUrl: "/tsac.png",
+    imageUrl: EXPERIENCE_TSAC_LOGO_SRC,
   },
 };
 
@@ -110,7 +125,7 @@ export const PROJECT_DETAILS: Record<string, PortfolioDetail> = {
     overview:
       "WatsApp is a mobile-first study hub where Waterloo students join course chats, share attachments, and manage study groups. I led product design—mapping journeys for onboarding and verification, refining chat and group structures, and prototyping screens so flows stayed clear during fast, distracted use between classes. Work centered on interaction states, hierarchy, and feedback patterns rather than implementation.",
     websiteUrl: "#",
-    imageUrl: "/watsapp.png",
+    imageUrl: PROJECT_WATSAPP_IMAGE_SRC,
   },
   unicook: {
     title: "UniCook",
@@ -120,6 +135,6 @@ export const PROJECT_DETAILS: Record<string, PortfolioDetail> = {
     overview:
       "Designed and prototyped a cooking competition platform for university students by defining match flow logic and interaction states and supporting an ELO-based ranking system. Mapped and refined user journeys across cooking, submission, and ranking workflows, improving navigation clarity and reducing cognitive load during multi-step interactions.",
     websiteUrl: "#",
-    imageUrl: "/unicook.png",
+    imageUrl: PROJECT_UNICOOK_LOGO_SRC,
   },
 };

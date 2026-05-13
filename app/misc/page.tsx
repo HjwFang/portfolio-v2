@@ -46,8 +46,13 @@ const GAMES: GameCard[] = [
 ];
 
 function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosition }: GameCard) {
+  const rankSizeClass =
+    title === "VALORANT"
+      ? "size-[clamp(5rem,12vw,6rem)]"
+      : "size-[clamp(5.5rem,14vw,7rem)]";
+
   return (
-    <article className="relative h-full pb-14">
+    <article className="relative h-full pb-[clamp(2.5rem,8vw,3.5rem)]">
       <div className="relative aspect-2/3 overflow-visible">
         <CrossingCornerBorder bleed="8px" thickness="2px" className="h-full w-full text-foreground">
           <div className="relative h-full w-full overflow-hidden bg-foreground/5">
@@ -55,7 +60,7 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
               src={coverArt}
               alt={coverAlt}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 400px"
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
               className="object-cover"
               style={{ objectPosition: coverPosition ?? "center center" }}
               placeholder="blur"
@@ -65,12 +70,10 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
           </div>
         </CrossingCornerBorder>
         <div
-          className={`pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 ${
-            title === "VALORANT" ? "size-24" : "size-28"
-          }`}
+          className={`pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 ${rankSizeClass}`}
         >
           <div
-            className="absolute inset-[18%] rounded-full opacity-70 blur-[22px]"
+            className="absolute inset-[18%] rounded-full opacity-70 blur-[clamp(14px,2vw,22px)]"
             style={{ backgroundColor: accent }}
             aria-hidden
           />
@@ -78,7 +81,7 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
             src={rankIcon}
             alt={`${title} rank icon for ${rank}`}
             fill
-            sizes={title === "VALORANT" ? "96px" : "112px"}
+            sizes="(max-width: 768px) 25vw, 7vw"
             className="object-contain drop-shadow-[0_16px_28px_rgba(0,0,0,0.35)]"
             placeholder="blur"
             blurDataURL={IMAGE_BLUR_DATA_URL}
@@ -91,29 +94,29 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
 
 export default function MiscPage() {
   return (
-    <div className="min-h-screen px-[5vw] lg:px-[89px]">
+    <div className="min-h-screen px-[clamp(24px,4.635vw,89px)]">
       <SectionContent aria-label="Miscellaneous">
-        <div className="flex items-center gap-3 mb-10">
+        <div className="mb-[clamp(1.75rem,4vh,2.5rem)] flex items-center gap-3">
           <span className="size-3 rounded-full bg-foreground shrink-0" aria-hidden />
-          <h2 className="font-general font-medium text-foreground text-2xl lg:text-3xl tracking-tight m-0">
+          <h2 className="m-0 font-general font-medium tracking-tight text-foreground text-[clamp(1.25rem,2.4vw,1.875rem)]">
             misc
           </h2>
         </div>
 
-        <section aria-labelledby="games-heading" className="flex flex-col gap-8">
-          <div className="max-w-2xl">
+        <section aria-labelledby="games-heading" className="flex flex-col gap-[clamp(1.5rem,3vw,2rem)]">
+          <div className="max-w-[90vw]">
             <h3
               id="games-heading"
               className="font-general font-medium text-foreground text-[clamp(34px,4vw,56px)] tracking-tight m-0"
             >
               games
             </h3>
-            <p className="mt-3 font-quicksand font-light text-base leading-relaxed text-foreground/75">
+            <p className="mt-3 font-quicksand font-light leading-relaxed text-foreground/75 text-[clamp(0.9375rem,1.35vw,1.125rem)]">
               the three games i queue the most right now, with the rank grind attached at the bottom.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-[clamp(1.5rem,3vw,2rem)] md:grid-cols-2 xl:grid-cols-3">
             {GAMES.map((game) => (
               <GameTile key={game.title} {...game} />
             ))}

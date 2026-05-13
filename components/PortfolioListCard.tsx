@@ -22,20 +22,103 @@ export default function PortfolioListCard({
   showSubtitle = true,
 }: PortfolioListCardProps) {
   const { title, date, subtitle, description, image } = item;
+  const isCompactCardImage =
+    item.id === "trudeau-sac" ||
+    item.id === "watsapp" ||
+    item.id === "unicook";
+  const isAtaraxiaCard = item.id === "ataraxia";
+  const isQuickposCard = item.id === "quickpos";
+  const isTsacCard = item.id === "trudeau-sac";
+  const isUnicookCard = item.id === "unicook";
 
   const body = (
     <>
-      <div className="relative w-full aspect-4/2.5 overflow-hidden border border-foreground/10 bg-transparent transition-colors duration-200 group-hover:border-foreground/20">
-        <Image
-          src={image}
-          alt={title}
-          fill
-          priority={priority}
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 480px"
-          placeholder="blur"
-          blurDataURL={IMAGE_BLUR_DATA_URL}
-        />
+      <div
+        className={`relative flex w-full aspect-4/2.5 overflow-hidden border border-foreground/10 transition-colors duration-200 group-hover:border-foreground/20 ${
+          isAtaraxiaCard
+            ? "items-center justify-center bg-[#FFFFFF]"
+            : isCompactCardImage
+              ? "items-center justify-center bg-[#FFFFFF] p-[clamp(8px,1.4vw,16px)]"
+              : isQuickposCard
+                ? "items-center justify-center bg-[#FFFFFF]"
+                : "bg-transparent"
+        }`}
+      >
+        {isCompactCardImage ? (
+          isUnicookCard ? (
+            <Image
+              src={image}
+              alt={title}
+              width={97}
+              height={18}
+              priority={priority}
+              className="h-[10px] w-auto max-w-[min(72vw,8.5rem)] object-contain object-center sm:h-[11px]"
+              sizes="120px"
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
+            />
+          ) : (
+            <div
+              className={
+                isTsacCard
+                  ? "relative h-[min(28%,5.5rem)] w-[min(22%,5rem)] max-h-[58%] max-w-[40%] sm:h-[min(30%,5.85rem)] sm:w-[min(24%,5.35rem)]"
+                  : "relative h-[min(38%,7.75rem)] w-[min(28%,6.5rem)] max-h-[82%] max-w-[52%] sm:h-[min(40%,8.25rem)] sm:w-[min(30%,7rem)]"
+              }
+            >
+              <Image
+                src={image}
+                alt={title}
+                fill
+                priority={priority}
+                className="object-contain object-center"
+                sizes={
+                  isTsacCard
+                    ? "(max-width: 768px) 40vw, (max-width: 1200px) 22vw, min(140px, 18vw)"
+                    : "(max-width: 768px) 45vw, (max-width: 1200px) 24vw, min(180px, 20vw)"
+                }
+                placeholder="blur"
+                blurDataURL={IMAGE_BLUR_DATA_URL}
+              />
+            </div>
+          )
+        ) : isQuickposCard ? (
+          <div className="relative h-[70%] w-[94%] max-h-[85%] max-w-[98%]">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              priority={priority}
+              className="object-contain object-center"
+              sizes="(max-width: 768px) 96vw, (max-width: 1200px) 48vw, min(380px, 36vw)"
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
+            />
+          </div>
+        ) : isAtaraxiaCard ? (
+          <div className="relative h-[min(46%,8.75rem)] w-[min(46%,9.5rem)] max-h-[58%] max-w-[62%] sm:h-[min(48%,9.25rem)] sm:w-[min(48%,10rem)]">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              priority={priority}
+              className="object-contain object-center"
+              sizes="(max-width: 768px) 62vw, (max-width: 1200px) 32vw, min(200px, 28vw)"
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
+            />
+          </div>
+        ) : (
+          <Image
+            src={image}
+            alt={title}
+            fill
+            priority={priority}
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, min(480px, 35vw)"
+            placeholder="blur"
+            blurDataURL={IMAGE_BLUR_DATA_URL}
+          />
+        )}
       </div>
 
       <div className="mt-[clamp(4px,0.4vw,8px)] flex items-baseline justify-between gap-[clamp(10px,0.9vw,14px)]">

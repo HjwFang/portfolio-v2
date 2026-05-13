@@ -18,7 +18,7 @@ export default function SectionContent({
       {showBackButton && (
         <Link
           href={backHref}
-          className="mb-8 inline-flex items-center gap-2 font-quicksand font-light text-foreground/80 text-[clamp(12px,0.833vw,14px)] tracking-wide transition-colors hover:text-foreground"
+          className="mb-[clamp(1.25rem,3vh,2rem)] inline-flex items-center gap-2 font-quicksand font-light text-foreground/80 text-[clamp(12px,0.833vw,14px)] tracking-wide transition-colors hover:text-foreground"
         >
           <span aria-hidden>←</span>
           {backLabel}

@@ -86,7 +86,7 @@ function GameCard({
             src={coverArt}
             alt={coverAlt}
             fill
-            sizes="(max-width: 640px) 42vw, (max-width: 1024px) 30vw, 208px"
+            sizes="(max-width: 640px) 42vw, (max-width: 1024px) 30vw, 13vw"
             className="object-cover"
             style={{ objectPosition: coverPosition }}
             placeholder="blur"
@@ -106,7 +106,7 @@ function GameCard({
             src={rankIcon}
             alt={`${title} rank icon for ${rank}`}
             fill
-            sizes="96px"
+            sizes="(max-width: 640px) 24vw, 6vw"
             className="object-contain drop-shadow-[0_14px_24px_rgba(0,0,0,0.35)]"
             placeholder="blur"
             blurDataURL={IMAGE_BLUR_DATA_URL}
@@ -140,7 +140,7 @@ function SectionRenderer() {
   }, [index]);
 
   return (
-    <div className="flex w-full max-w-4xl flex-col gap-[clamp(16px,1.6vw,24px)]">
+    <div className="flex w-full max-w-[92vw] flex-col gap-[clamp(16px,1.6vw,24px)]">
       {index === 0 && (
         <section className="w-full">
           <h2 className="mb-[clamp(16px,1.4vw,24px)] font-general font-medium lowercase text-[clamp(16px,1.8vw,28px)] tracking-tight text-foreground">

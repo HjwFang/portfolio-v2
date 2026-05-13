@@ -15,7 +15,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   }
 
   return (
-    <div className="min-h-screen px-[5vw] lg:px-[89px]">
+    <div className="min-h-screen px-[clamp(24px,4.635vw,89px)]">
       <SectionContent aria-label={project.title} backHref="/projects" backLabel="Back to projects">
         <ProjectCell
           title={project.title}
