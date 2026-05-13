@@ -20,6 +20,7 @@ export default function ProjectsPage() {
               item={item}
               href={`/projects/${item.id}`}
               priority={i === 0}
+              showSubtitle={false}
             />
           ))}
         </div>

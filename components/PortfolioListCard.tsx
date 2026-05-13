@@ -5,18 +5,26 @@ import type { PortfolioCardItem } from "@/lib/portfolioContent";
 
 type PortfolioListCardProps = {
   item: PortfolioCardItem;
-  href: string;
+  /** Omit for non-navigating cards (e.g. experiences shown only in the home SPA). */
+  href?: string;
   priority?: boolean;
+  /** When false, hides the subtitle line (e.g. role) between title and description. */
+  showSubtitle?: boolean;
 };
 
-export default function PortfolioListCard({ item, href, priority = false }: PortfolioListCardProps) {
+const cardClassName =
+  "group flex w-full flex-col gap-[clamp(4px,0.4vw,8px)] text-left no-underline";
+
+export default function PortfolioListCard({
+  item,
+  href,
+  priority = false,
+  showSubtitle = true,
+}: PortfolioListCardProps) {
   const { title, date, subtitle, description, image } = item;
 
-  return (
-    <Link
-      href={href}
-      className="group flex w-full flex-col gap-[clamp(4px,0.4vw,8px)] text-left no-underline"
-    >
+  const body = (
+    <>
       <div className="relative w-full aspect-4/2.5 overflow-hidden border border-foreground/10 bg-transparent transition-colors duration-200 group-hover:border-foreground/20">
         <Image
           src={image}
@@ -40,13 +48,25 @@ export default function PortfolioListCard({ item, href, priority = false }: Port
       </div>
 
       <div className="flex flex-col gap-[clamp(4px,0.4vw,8px)]">
-        <span className="font-quicksand font-medium text-[clamp(10px,0.677vw,12px)] tracking-wide text-foreground/75">
-          {subtitle}
-        </span>
+        {showSubtitle ? (
+          <span className="font-quicksand font-medium text-[clamp(10px,0.677vw,12px)] tracking-wide text-foreground/75">
+            {subtitle}
+          </span>
+        ) : null}
         <p className="m-0 line-clamp-2 font-quicksand font-light text-[clamp(9px,0.625vw,11px)] leading-snug text-foreground/60">
           {description}
         </p>
       </div>
-    </Link>
+    </>
   );
+
+  if (href != null) {
+    return (
+      <Link href={href} className={cardClassName}>
+        {body}
+      </Link>
+    );
+  }
+
+  return <div className={cardClassName}>{body}</div>;
 }

@@ -20,12 +20,12 @@ export type PortfolioDetail = {
 export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {
     id: "quickpos",
-    title: "Quickpos Technologies Inc.",
+    title: "QuickPOS Technologies Inc.",
     date: "Jan 2026 – Apr 2026",
-    subtitle: "Product Designer",
+    subtitle: "Software Engineer Intern",
     description:
-      "Product design for RAG B2B tools and POS-related workflows—mapping flows, tightening interaction patterns, and partnering with engineering so shipped features read clearly under real merchant pressure.",
-    image: "/atrx.png",
+      "Software engineering for POS-adjacent systems and RAG-enabled B2B tools—building and shipping features alongside the team, with attention to reliability and clarity for merchants and internal operators.",
+    image: "/quickpos-experience.png",
   },
   {
     id: "ataraxia",
@@ -70,14 +70,14 @@ export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
 
 export const EXPERIENCE_DETAILS: Record<string, PortfolioDetail> = {
   quickpos: {
-    title: "Quickpos Technologies",
+    title: "QuickPOS Technologies",
     timeline: "jan 2026 - apr 2026",
-    tools: "figma, prototyping, cross-functional collaboration",
-    skills: "product_design, ux, b2b_saas",
+    tools: "development, version control, cross-functional collaboration",
+    skills: "software_engineering, b2b_saas, pos_systems",
     overview:
-      "As a Product Designer at Quickpos, I focused on how RAG-enabled B2B tools and POS-adjacent workflows were understood in the field—structuring flows, refining states and feedback, and working closely with engineering so what shipped stayed legible and low-friction for merchants and internal operators.",
+      "As a Software Engineer Intern at QuickPOS, I contributed to POS-adjacent and RAG-enabled B2B products—implementing features, debugging production issues, and coordinating with teammates so releases stayed dependable and understandable for merchants and internal users.",
     websiteUrl: "#",
-    imageUrl: "/atrx.png",
+    imageUrl: "/quickpos-experience.png",
   },
   ataraxia: {
     title: "Ataraxia Apparel",

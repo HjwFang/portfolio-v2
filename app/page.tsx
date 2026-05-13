@@ -148,12 +148,7 @@ function SectionRenderer() {
           </h2>
           <div className="grid w-full grid-cols-2 gap-x-[clamp(24px,3vw,48px)] gap-y-[clamp(24px,3vw,48px)]">
             {EXPERIENCE_GRID_ITEMS.map((item, i) => (
-              <PortfolioListCard
-                key={item.id}
-                item={item}
-                href={`/experience/${item.id}`}
-                priority={i === 0}
-              />
+              <PortfolioListCard key={item.id} item={item} priority={i === 0} />
             ))}
           </div>
         </section>
@@ -170,6 +165,7 @@ function SectionRenderer() {
                 item={item}
                 href={`/projects/${item.id}`}
                 priority={i === 0}
+                showSubtitle={false}
               />
             ))}
           </div>
