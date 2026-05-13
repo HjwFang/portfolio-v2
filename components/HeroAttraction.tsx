@@ -393,7 +393,7 @@ export default function HeroAttraction() {
                     />
 
                     {/* Bottom-left “nav section” label */}
-                    <div className="pointer-events-none absolute bottom-4 left-4 z-[30]">
+                    <div className="pointer-events-none absolute bottom-[clamp(12px,1vw,18px)] left-[clamp(12px,1vw,18px)] z-30">
                         <div className="font-quicksand font-light text-foreground/60 text-[clamp(11px,0.677vw,13px)] tracking-wider">
                             0{navSection.x} {navSection.label}
                         </div>
@@ -406,7 +406,7 @@ export default function HeroAttraction() {
                         }`}
                     >
                         <div
-                            className="absolute inset-0 z-[5] cursor-grab touch-none select-none active:cursor-grabbing"
+                            className="absolute inset-0 z-5 cursor-grab touch-none select-none active:cursor-grabbing"
                             onPointerDown={onAttractionPointerDown}
                             onPointerMove={onAttractionPointerMove}
                             onPointerUp={onAttractionPointerUp}
@@ -438,14 +438,14 @@ export default function HeroAttraction() {
 
                     {/* Default Dot State */}
                     <div
-                        className={`relative z-20 flex flex-col items-center gap-4 transition-opacity duration-700 ease-in-out ${
+                        className={`relative z-20 flex flex-col items-center gap-[clamp(12px,1vw,16px)] transition-opacity duration-700 ease-in-out ${
                             isAnyAttractionHovered ? "opacity-0 pointer-events-none" : "opacity-100"
                         }`}
                     >
                         <div
-                            className="size-12 lg:size-16 rounded-full border border-foreground/10 opacity-80 flex items-center justify-center transition-all duration-300"
+                            className="size-[clamp(48px,4vw,64px)] rounded-full border border-foreground/10 opacity-80 flex items-center justify-center transition-all duration-300"
                         >
-                            <div className="size-2 lg:size-3 rounded-full transition-colors duration-300 bg-foreground/20" />
+                            <div className="size-[clamp(8px,0.7vw,12px)] rounded-full transition-colors duration-300 bg-foreground/20" />
                         </div>
                     </div>
 

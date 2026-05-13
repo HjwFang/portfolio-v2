@@ -63,7 +63,7 @@ export default function HeroNav() {
     setSlideRect({ top, height });
   }, [activeIndex]);
 
-  // Keep attraction state aligned with the current highlighted nav item.
+  // Keep attraction/content state aligned with the clicked nav item.
   useEffect(() => {
     heroNavHoverCtx?.setHoveredIndex(activeIndex);
   }, [activeIndex, heroNavHoverCtx]);
@@ -124,13 +124,18 @@ export default function HeroNav() {
                     key={item.num}
                     className="w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)]"
                   >
-                    <span className="flex items-center gap-2 font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
-                      <span className="tabular-nums text-[0.8em] opacity-50">{item.num}</span>
+                    <span className="flex min-w-0 flex-1 items-center gap-[clamp(6px,0.7vw,10px)] font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
+                      <span className="tabular-nums shrink-0 text-[0.8em] opacity-50">{item.num}</span>
                       <span>{item.label}</span>
                     </span>
-                    {(hoveredIndex === index || activeIndex === index) && (
-                      <span className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70">»»</span>
-                    )}
+                    <span
+                      className={`shrink-0 font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70 ${
+                        hoveredIndex === index || activeIndex === index ? "" : "invisible"
+                      }`}
+                      aria-hidden
+                    >
+                      »»
+                    </span>
                   </div>
                 ))}
               </div>
@@ -151,41 +156,41 @@ export default function HeroNav() {
                   id={`nav-item-${index}`}
                   role="option"
                   aria-selected={isActive}
+                  onClick={() => setSelectedIndex(index)}
                   onMouseEnter={() => {
-                    setSelectedIndex(index);
                     setHoveredIndex(index);
-                    heroNavHoverCtx?.setHoveredIndex(index);
                   }}
                   onMouseLeave={() => {
                     setHoveredIndex(-1);
-                    heroNavHoverCtx?.setHoveredIndex(activeIndex);
                   }}
-                    className={
-                      isActive
-                        ? "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground transition-colors cursor-pointer"
-                        : "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
-                    }
+                  onFocus={() => setHoveredIndex(index)}
+                  onBlur={() => setHoveredIndex(-1)}
+                  className={
+                    isActive
+                      ? "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] bg-transparent px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground transition-colors hover:bg-foreground/5 cursor-pointer"
+                      : "w-full flex items-center justify-between gap-[clamp(6px,1vw,18px)] px-[clamp(8px,0.625vw,12px)] py-[clamp(5px,0.35vw,7px)] text-foreground/80 transition-colors hover:bg-foreground/10 hover:text-foreground cursor-pointer"
+                  }
                 >
-                  <span className="flex items-center gap-2 font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
-                    <span className="tabular-nums text-[0.8em] opacity-50">{item.num}</span>
+                  <span className="flex min-w-0 flex-1 items-center gap-[clamp(6px,0.7vw,10px)] font-general font-medium tracking-tight leading-none text-[clamp(14px,0.9vw,16px)]">
+                    <span className="tabular-nums shrink-0 text-[0.8em] opacity-50">{item.num}</span>
                     <span>{item.label}</span>
                   </span>
-                  {(hoveredIndex === index || isActive) && (
-                    <span
-                      className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70"
-                      aria-hidden
-                    >
-                      »»
-                    </span>
-                  )}
+                  <span
+                    className={`shrink-0 font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70 ${
+                      hoveredIndex === index || isActive ? "" : "invisible"
+                    }`}
+                    aria-hidden
+                  >
+                    »»
+                  </span>
                 </div>
               </li>
             );
           })}
         </ul>
       </div>
-      <div className="mt-2 flex items-center gap-2">
-        <div className="h-[2px] flex-1 bg-foreground/20">
+      <div className="mt-[clamp(6px,0.7vw,10px)] flex items-center gap-[clamp(6px,0.7vw,10px)]">
+        <div className="h-[clamp(1px,0.12vw,2px)] flex-1 bg-foreground/20">
           <div
             className="h-full bg-foreground transition-[width] duration-300 ease-out"
             style={{ width: progressWidth }}
