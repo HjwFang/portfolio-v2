@@ -5,8 +5,8 @@ import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 
 const ITEMS = [
-  { num: "01", label: "projects & experiences" },
-  { num: "02", label: "about me" },
+  { num: "01", label: "experiences" },
+  { num: "02", label: "projects" },
   { num: "03", label: "misc gallery" },
 ] as const;
 

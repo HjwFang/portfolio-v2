@@ -1,14 +1,14 @@
 import SectionContent from "@/components/SectionContent";
 import ProjectCell from "@/components/ProjectCell";
-import { EXPERIENCE_DETAILS } from "@/lib/portfolioContent";
+import { PROJECT_DETAILS } from "@/lib/portfolioContent";
 import { notFound } from "next/navigation";
 
 export function generateStaticParams() {
-  return Object.keys(EXPERIENCE_DETAILS).map((id) => ({ id }));
+  return Object.keys(PROJECT_DETAILS).map((id) => ({ id }));
 }
 
-export default function ExperienceDetailPage({ params }: { params: { id: string } }) {
-  const project = EXPERIENCE_DETAILS[params.id];
+export default function ProjectDetailPage({ params }: { params: { id: string } }) {
+  const project = PROJECT_DETAILS[params.id];
 
   if (!project) {
     notFound();
@@ -16,7 +16,7 @@ export default function ExperienceDetailPage({ params }: { params: { id: string 
 
   return (
     <div className="min-h-screen px-[5vw] lg:px-[89px]">
-      <SectionContent aria-label={project.title} backHref="/experience" backLabel="Back to experiences">
+      <SectionContent aria-label={project.title} backHref="/projects" backLabel="Back to projects">
         <ProjectCell
           title={project.title}
           timeline={project.timeline}

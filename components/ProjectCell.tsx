@@ -1,6 +1,7 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import Image from "next/image";
 import Link from "next/link";
+import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 
 interface ProjectCellProps {
   title: string;
@@ -37,8 +38,11 @@ export default function ProjectCell({
               alt={title || "Project Image"}
               width={1600}
               height={900}
-              className="w-full h-auto block grayscale-[0.2] group-hover:grayscale-0 transition-[filter] duration-500"
+              className="h-auto w-full block grayscale-[0.2] transition-[filter] duration-500 group-hover:grayscale-0"
+              sizes="(max-width: 1280px) 100vw, 1200px"
               priority
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
             />
           </div>
         </CrossingCornerBorder>

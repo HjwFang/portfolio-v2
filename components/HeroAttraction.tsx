@@ -208,11 +208,11 @@ export default function HeroAttraction() {
     const isAnyAttractionHovered = hoveredIndex !== -1;
 
     const navSection = (() => {
-        if (hoveredIndex === 0) return { x: "1", label: "projects & experiences" };
-        if (hoveredIndex === 1) return { x: "2", label: "about me" };
+        if (hoveredIndex === 0) return { x: "1", label: "experiences" };
+        if (hoveredIndex === 1) return { x: "2", label: "projects" };
         if (hoveredIndex === 2) return { x: "3", label: "misc gallery" };
         // Default to the first section if context hasn't set yet.
-        return { x: "1", label: "projects & experiences" };
+        return { x: "1", label: "experiences" };
     })();
 
     const attractionInteractionRef = useRef({

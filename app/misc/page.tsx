@@ -1,5 +1,7 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import SectionContent from "@/components/SectionContent";
+import Image from "next/image";
+import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 
 type GameCard = {
   title: string;
@@ -47,20 +49,24 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
   return (
     <article className="relative h-full pb-14">
       <div className="relative aspect-2/3 overflow-visible">
-        <CrossingCornerBorder bleed="8px" thickness="2px" className="text-foreground">
+        <CrossingCornerBorder bleed="8px" thickness="2px" className="h-full w-full text-foreground">
           <div className="relative h-full w-full overflow-hidden bg-foreground/5">
-            <img
+            <Image
               src={coverArt}
               alt={coverAlt}
-              className="h-full w-full object-cover"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 400px"
+              className="object-cover"
               style={{ objectPosition: coverPosition ?? "center center" }}
+              placeholder="blur"
+              blurDataURL={IMAGE_BLUR_DATA_URL}
             />
             <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-foreground/55 via-transparent to-transparent" />
           </div>
         </CrossingCornerBorder>
         <div
           className={`pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 ${
-            title === "VALORANT" ? "h-24 w-24" : "h-28 w-28"
+            title === "VALORANT" ? "size-24" : "size-28"
           }`}
         >
           <div
@@ -68,12 +74,14 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
             style={{ backgroundColor: accent }}
             aria-hidden
           />
-          <img
+          <Image
             src={rankIcon}
             alt={`${title} rank icon for ${rank}`}
-            className={`relative object-contain drop-shadow-[0_16px_28px_rgba(0,0,0,0.35)] ${
-              title === "VALORANT" ? "h-24 w-24" : "h-28 w-28"
-            }`}
+            fill
+            sizes={title === "VALORANT" ? "96px" : "112px"}
+            className="object-contain drop-shadow-[0_16px_28px_rgba(0,0,0,0.35)]"
+            placeholder="blur"
+            blurDataURL={IMAGE_BLUR_DATA_URL}
           />
         </div>
       </div>
