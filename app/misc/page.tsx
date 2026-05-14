@@ -1,7 +1,9 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import SectionContent from "@/components/SectionContent";
-import Image from "next/image";
+import RevealImage from "@/components/RevealImage";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
+import ArtGallery from "@/components/ArtGallery";
+import { ART_PIECES } from "./art-data";
 
 type GameCard = {
   title: string;
@@ -56,7 +58,7 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
       <div className="relative aspect-2/3 overflow-visible">
         <CrossingCornerBorder bleed="8px" thickness="2px" className="h-full w-full text-foreground">
           <div className="relative h-full w-full overflow-hidden bg-foreground/5">
-            <Image
+            <RevealImage
               src={coverArt}
               alt={coverAlt}
               fill
@@ -77,7 +79,7 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
             style={{ backgroundColor: accent }}
             aria-hidden
           />
-          <Image
+          <RevealImage
             src={rankIcon}
             alt={`${title} rank icon for ${rank}`}
             fill
@@ -102,6 +104,27 @@ export default function MiscPage() {
             misc
           </h2>
         </div>
+
+        <section
+          aria-labelledby="art-heading"
+          className="mb-[clamp(3rem,6vw,5rem)] flex min-w-0 w-full flex-col gap-[clamp(1.5rem,3vw,2rem)]"
+        >
+          <div className="max-w-[90vw]">
+            <h3
+              id="art-heading"
+              className="font-general font-medium text-foreground text-[clamp(34px,4vw,56px)] tracking-tight m-0"
+            >
+              art
+            </h3>
+            <p className="mt-3 font-quicksand font-light leading-relaxed text-foreground/75 text-[clamp(0.9375rem,1.35vw,1.125rem)]">
+              a selection of sketchbook pieces over the years — pencil, ink, oil pastel. tap any tile to view full size.
+            </p>
+          </div>
+
+          <div className="min-w-0 w-full">
+            <ArtGallery pieces={ART_PIECES} />
+          </div>
+        </section>
 
         <section aria-labelledby="games-heading" className="flex flex-col gap-[clamp(1.5rem,3vw,2rem)]">
           <div className="max-w-[90vw]">

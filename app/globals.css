@@ -31,3 +31,32 @@ body {
   color: var(--color-foreground);
   font-family: var(--font-general);
 }
+
+@keyframes portfolio-image-reveal {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.portfolio-image-reveal--pending {
+  opacity: 0;
+  transform: translate3d(0, 12px, 0);
+}
+
+.portfolio-image-reveal--shown {
+  animation: portfolio-image-reveal 0.62s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portfolio-image-reveal--pending,
+  .portfolio-image-reveal--shown {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

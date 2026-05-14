@@ -1,4 +1,4 @@
-import Image from "next/image";
+import RevealImage from "@/components/RevealImage";
 import Link from "next/link";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import type { PortfolioCardItem } from "@/lib/portfolioContent";
@@ -46,7 +46,7 @@ export default function PortfolioListCard({
       >
         {isCompactCardImage ? (
           isUnicookCard ? (
-            <Image
+            <RevealImage
               src={image}
               alt={title}
               width={97}
@@ -65,7 +65,7 @@ export default function PortfolioListCard({
                   : "relative h-[min(38%,7.75rem)] w-[min(28%,6.5rem)] max-h-[82%] max-w-[52%] sm:h-[min(40%,8.25rem)] sm:w-[min(30%,7rem)]"
               }
             >
-              <Image
+              <RevealImage
                 src={image}
                 alt={title}
                 fill
@@ -83,7 +83,7 @@ export default function PortfolioListCard({
           )
         ) : isQuickposCard ? (
           <div className="relative h-[70%] w-[94%] max-h-[85%] max-w-[98%]">
-            <Image
+            <RevealImage
               src={image}
               alt={title}
               fill
@@ -96,7 +96,7 @@ export default function PortfolioListCard({
           </div>
         ) : isAtaraxiaCard ? (
           <div className="relative h-[min(46%,8.75rem)] w-[min(46%,9.5rem)] max-h-[58%] max-w-[62%] sm:h-[min(48%,9.25rem)] sm:w-[min(48%,10rem)]">
-            <Image
+            <RevealImage
               src={image}
               alt={title}
               fill
@@ -108,7 +108,7 @@ export default function PortfolioListCard({
             />
           </div>
         ) : (
-          <Image
+          <RevealImage
             src={image}
             alt={title}
             fill

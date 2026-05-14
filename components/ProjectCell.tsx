@@ -1,5 +1,5 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
-import Image from "next/image";
+import RevealImage from "@/components/RevealImage";
 import Link from "next/link";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import {
@@ -56,7 +56,7 @@ export default function ProjectCell({
           >
             {isAtaraxiaHero ? (
               <div className="relative h-[min(42%,10rem)] w-[min(42%,11rem)] max-h-[54%] max-w-[58%] md:h-[min(44%,10.5rem)] md:w-[min(44%,11.5rem)]">
-                <Image
+                <RevealImage
                   src={imageUrl}
                   alt={title || "Project Image"}
                   fill
@@ -69,7 +69,7 @@ export default function ProjectCell({
               </div>
             ) : isCompactHero ? (
               isUnicookHero ? (
-                <Image
+                <RevealImage
                   src={imageUrl}
                   alt={title || "Project Image"}
                   width={97}
@@ -82,7 +82,7 @@ export default function ProjectCell({
                 />
               ) : (
                 <div className="relative h-[min(36%,9rem)] w-[min(28%,8rem)] max-h-[78%] max-w-[48%] md:h-[min(38%,10rem)] md:w-[min(30%,9rem)]">
-                  <Image
+                  <RevealImage
                     src={imageUrl}
                     alt={title || "Project Image"}
                     fill
@@ -95,11 +95,12 @@ export default function ProjectCell({
                 </div>
               )
             ) : (
-              <Image
+              <RevealImage
                 src={imageUrl}
                 alt={title || "Project Image"}
                 width={1600}
                 height={900}
+                wrapClassName="block w-full"
                 className="block h-auto w-full grayscale-[0.2] transition-[filter] duration-500 group-hover:grayscale-0"
                 sizes="94vw"
                 priority

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import RevealImage from "@/components/RevealImage";
 import { useEffect, useState } from "react";
 
 import HeroShell from "@/components/HeroShell";
@@ -9,6 +9,8 @@ import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import IndexedSelector from "@/components/IndexedSelector";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 import { EXPERIENCE_GRID_ITEMS, PROJECT_GRID_ITEMS } from "@/lib/portfolioContent";
+import ArtGallery from "@/components/ArtGallery";
+import { ART_PIECES } from "@/app/misc/art-data";
 
 export default function Home() {
   return (
@@ -49,20 +51,13 @@ const GAMES = [
 ] as const;
 
 const MISC_TABS = [
-  { id: "arts", label: "arts" },
+  { id: "art", label: "art" },
   { id: "games", label: "games" },
   { id: "sports", label: "sports" },
 ] as const;
 
 type MiscTab = (typeof MISC_TABS)[number]["id"];
 
-function ArtPieceCard({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={`bg-foreground/5 border border-foreground/10 hover:bg-foreground/10 transition-colors duration-300 ${className}`}
-    />
-  );
-}
 
 function GameCard({
   title,
@@ -82,7 +77,7 @@ function GameCard({
     <div className="relative pb-[clamp(32px,4.5vw,48px)]">
       <div className="relative aspect-2/3 overflow-visible">
         <div className="relative h-full w-full overflow-hidden border border-foreground/10 bg-foreground/5 transition-colors duration-300">
-          <Image
+          <RevealImage
             src={coverArt}
             alt={coverAlt}
             fill
@@ -102,7 +97,7 @@ function GameCard({
             style={{ backgroundColor: accent }}
             aria-hidden
           />
-          <Image
+          <RevealImage
             src={rankIcon}
             alt={`${title} rank icon for ${rank}`}
             fill
@@ -129,7 +124,7 @@ const GAME_IMAGE_PRELOAD_SRCS = [
 function SectionRenderer() {
   const context = useHeroNavHoverContext();
   const index = context?.hoveredIndex ?? 0;
-  const [miscTab, setMiscTab] = useState<MiscTab>("arts");
+  const [miscTab, setMiscTab] = useState<MiscTab>("art");
 
   useEffect(() => {
     if (index !== 2) return;
@@ -172,7 +167,7 @@ function SectionRenderer() {
         </section>
       )}
       {index === 2 && (
-        <section className="w-full">
+        <section className="min-w-0 w-full">
           <div className="mb-[clamp(20px,2vh,28px)] flex w-full flex-wrap items-center justify-between gap-[clamp(16px,1.6vw,24px)]">
             <h2 className="font-general font-medium text-[clamp(16px,1.8vw,28px)] tracking-tight text-foreground">
               misc gallery
@@ -187,13 +182,9 @@ function SectionRenderer() {
           </div>
 
           <div className="w-full transition-opacity duration-300">
-            {miscTab === "arts" && (
-              <div className="grid w-full grid-cols-3 auto-rows-[clamp(72px,5.5vw,96px)] gap-[clamp(8px,0.7vw,12px)]">
-                <ArtPieceCard className="col-span-2 row-span-2" />
-                <ArtPieceCard className="col-span-1 row-span-1" />
-                <ArtPieceCard className="col-span-1 row-span-2" />
-                <ArtPieceCard className="col-span-1 row-span-1" />
-                <ArtPieceCard className="col-span-2 row-span-1" />
+            {miscTab === "art" && (
+              <div className="min-w-0 w-full">
+                <ArtGallery pieces={ART_PIECES} />
               </div>
             )}
 
