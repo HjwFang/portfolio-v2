@@ -39,7 +39,6 @@ export const ART_PIECES: ArtPiece[] = [
   { file: "img_2067.jpg", width: 1324, height: 1600, year: 2023 },
   { file: "img_2068.jpg", width: 1278, height: 1600, year: 2023 },
   { file: "img_2074.jpg", width: 1600, height: 1213, year: 2023 },
-  { file: "img_2075.jpg", width: 1600, height: 1260, year: 2023 },
 
   // ── 2021 ──────────────────────────────────────────────────────────────────
   { file: "img_2069.jpg", width: 1319, height: 1600, year: 2021 },
