@@ -1,7 +1,7 @@
 "use client";
 
 import Image, { type ImageProps } from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 export type RevealImageProps = ImageProps & {
   /** Applied to the observer wrapper when `fill` is false (e.g. `block w-full` for full-width responsive images). */
@@ -18,10 +18,39 @@ export default function RevealImage({
   priority,
   style,
   wrapClassName,
+  onLoad,
+  onLoadingComplete,
   ...rest
 }: RevealImageProps) {
   const rootRef = useRef<HTMLSpanElement>(null);
   const [revealed, setRevealed] = useState(!!priority);
+  const [loaded, setLoaded] = useState(false);
+
+  const markLoaded = () => setLoaded(true);
+  const src = rest.src;
+
+  useLayoutEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+
+    const syncLoaded = () => {
+      const img = root.querySelector("img");
+      if (img?.complete && img.naturalWidth > 0) {
+        setLoaded(true);
+        return true;
+      }
+      return false;
+    };
+
+    if (syncLoaded()) return;
+
+    setLoaded(false);
+    const mo = new MutationObserver(() => {
+      syncLoaded();
+    });
+    mo.observe(root, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, [src]);
 
   useEffect(() => {
     if (priority) return;
@@ -52,7 +81,12 @@ export default function RevealImage({
       ? "portfolio-image-reveal--shown"
       : "portfolio-image-reveal--pending";
 
-  const imageClass = joinClasses(className, revealClass);
+  const imageClass = joinClasses(
+    className,
+    revealClass,
+    "transition-opacity duration-300 ease-out",
+    loaded ? "opacity-100" : "opacity-0 pointer-events-none",
+  );
 
   const wrapClass = fill
     ? joinClasses("absolute inset-0 block min-h-0 min-w-0 overflow-hidden", wrapClassName)
@@ -60,6 +94,10 @@ export default function RevealImage({
         "relative max-w-full min-w-0 overflow-hidden",
         wrapClassName ?? "inline-block",
       );
+
+  const imageStyle = fill
+    ? { backgroundColor: "transparent", ...style }
+    : style;
 
   return (
     <span ref={rootRef} className={wrapClass}>
@@ -69,7 +107,15 @@ export default function RevealImage({
         priority={priority}
         loading={priority ? "eager" : "lazy"}
         className={imageClass}
-        style={style}
+        style={imageStyle}
+        onLoad={(e) => {
+          markLoaded();
+          onLoad?.(e);
+        }}
+        onLoadingComplete={(img) => {
+          markLoaded();
+          onLoadingComplete?.(img);
+        }}
       />
     </span>
   );

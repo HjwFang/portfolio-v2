@@ -103,17 +103,9 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
         float scanAlpha = lineA * 0.14;
         float hatchAlpha = lineB * 0.11;
 
-        // Flicker: brief opacity drop to 0.4 for ~80ms every few seconds.
-        float period = 3.0;
-        float within = mod(uTime, period);
-        float gateTime = step(within, 0.08); // ~80ms window
-        float sineGate = step(0.92, sin(uTime * (6.28318530718 / period))); // thresholded sine
-        float flickerFactor = mix(1.0, 0.4, gateTime * sineGate);
-
         // Transparent hologram base fill + rim glow.
         float baseOpacity = 0.015;
         float alpha = baseOpacity + fresnel * 0.25 + scanAlpha + hatchAlpha;
-        alpha *= flickerFactor;
 
         // Slightly brighten rim while keeping the brown hologram on-theme.
         vec3 color = baseColor * (0.62 + fresnel * 2.0 + lineB * 0.15);

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import CascadeIn from "@/components/CascadeIn";
 import RevealImage from "@/components/RevealImage";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import type { ArtPiece } from "@/app/misc/art-data";
@@ -167,9 +168,18 @@ type Props = {
   pieces: ArtPiece[];
   /** Optional override for row packing density; omit to auto-tune from width */
   targetARSum?: number;
+  /** Stagger thumbnails top-left → bottom-right using portfolio-cascade-in */
+  cascade?: boolean;
+  /** First --cascade-step index (e.g. continue after hero intro). */
+  cascadeBaseStep?: number;
 };
 
-export default function ArtGallery({ pieces, targetARSum }: Props) {
+export default function ArtGallery({
+  pieces,
+  targetARSum,
+  cascade = false,
+  cascadeBaseStep = 0,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
 
@@ -195,6 +205,8 @@ export default function ArtGallery({ pieces, targetARSum }: Props) {
     return () => ro.disconnect();
   }, []);
 
+  let cascadeIndex = cascadeBaseStep;
+
   return (
     <div
       ref={containerRef}
@@ -208,7 +220,14 @@ export default function ArtGallery({ pieces, targetARSum }: Props) {
         return (
           <div key={section.key} className="flex w-full min-w-0 flex-col" style={{ gap: GAP }}>
             {/* Year label */}
-            <div className="flex items-center gap-3">
+            <div
+              className={`flex items-center gap-3 ${cascade ? "portfolio-cascade-in" : ""}`}
+              style={
+                cascade
+                  ? ({ ["--cascade-step"]: cascadeIndex++ } as CSSProperties)
+                  : undefined
+              }
+            >
               <span className="shrink-0 font-quicksand font-light text-[clamp(0.65rem,0.8vw,0.75rem)] tracking-[0.18em] uppercase text-foreground/35 select-none">
                 {section.label}
               </span>
@@ -225,26 +244,41 @@ export default function ArtGallery({ pieces, targetARSum }: Props) {
                 {row.items.map((p, tIdx) => {
                   const w = row.widths[tIdx];
                   const h = row.heights[tIdx];
+                  const step = cascade ? cascadeIndex++ : undefined;
 
-                  return (
+                  const thumb = (
+                    <RevealImage
+                      src={`/art/cleaned/thumb/${p.file}`}
+                      alt=""
+                      fill
+                      priority={cascade}
+                      sizes={`${w}px`}
+                      className={
+                        row.items.length === 1
+                          ? "object-contain object-left"
+                          : "object-cover"
+                      }
+                      placeholder="blur"
+                      blurDataURL={IMAGE_BLUR_DATA_URL}
+                    />
+                  );
+
+                  return cascade && step !== undefined ? (
+                    <CascadeIn
+                      key={p.file}
+                      step={step}
+                      className="relative shrink-0 overflow-hidden"
+                      style={{ width: w, height: h }}
+                    >
+                      {thumb}
+                    </CascadeIn>
+                  ) : (
                     <div
                       key={p.file}
                       className="relative shrink-0 overflow-hidden"
                       style={{ width: w, height: h }}
                     >
-                      <RevealImage
-                        src={`/art/cleaned/thumb/${p.file}`}
-                        alt=""
-                        fill
-                        sizes={`${w}px`}
-                        className={
-                          row.items.length === 1
-                            ? "object-contain object-left"
-                            : "object-cover"
-                        }
-                        placeholder="blur"
-                        blurDataURL={IMAGE_BLUR_DATA_URL}
-                      />
+                      {thumb}
                     </div>
                   );
                 })}
