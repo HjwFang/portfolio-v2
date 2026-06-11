@@ -18,19 +18,19 @@ export type PortfolioDetail = {
 };
 
 /** QuickPOS experience card + detail hero. */
-export const EXPERIENCE_QUICKPOS_IMAGE_SRC = "/experience-quickpos.png" as const;
+export const EXPERIENCE_QUICKPOS_IMAGE_SRC = "/images/experience/quickpos.png" as const;
 
 /** TSAC experience card + detail hero. */
-export const EXPERIENCE_TSAC_LOGO_SRC = "/experience-tsac-logo.png" as const;
+export const EXPERIENCE_TSAC_LOGO_SRC = "/images/experience/tsac-logo.png" as const;
 
-/** Ataraxia experience card + detail hero (built from `favicon.png`, white canvas). */
-export const EXPERIENCE_ATARAXIA_IMAGE_SRC = "/experience-ataraxia.png" as const;
+/** Ataraxia experience card + detail hero (built from `images/brand/favicon.png`, white canvas). */
+export const EXPERIENCE_ATARAXIA_IMAGE_SRC = "/images/experience/ataraxia.png" as const;
 
 /** WatsApp project card + detail hero. */
-export const PROJECT_WATSAPP_IMAGE_SRC = "/project-watsapp.png" as const;
+export const PROJECT_WATSAPP_IMAGE_SRC = "/images/projects/watsapp.png" as const;
 
 /** UniCook project card + detail hero (wordmark on white). */
-export const PROJECT_UNICOOK_LOGO_SRC = "/project-unicook-logo.png" as const;
+export const PROJECT_UNICOOK_LOGO_SRC = "/images/projects/unicook-logo.png" as const;
 
 export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {

@@ -26,7 +26,7 @@ export default function Home() {
 const GAMES = [
   {
     title: "VALORANT",
-    coverArt: "/valorant-cover.png",
+    coverArt: "/images/gaming/valorant-cover.png",
     coverAlt: "VALORANT key art poster",
     rank: "Ascendant II",
     rankIcon: "https://xpulz.com/img/game/valorant/tiers/ascendant2.png",
@@ -35,19 +35,19 @@ const GAMES = [
   },
   {
     title: "Teamfight Tactics",
-    coverArt: "/tft-cover.png",
+    coverArt: "/images/gaming/tft-cover.png",
     coverAlt: "Teamfight Tactics key art",
     rank: "Plat II",
-    rankIcon: "/tft-rank.png",
+    rankIcon: "/images/gaming/tft-rank.png",
     accent: "#2ea3b0",
     coverPosition: "center center",
   },
   {
     title: "League of Legends",
-    coverArt: "/league-cover.png",
+    coverArt: "/images/gaming/league-cover.png",
     coverAlt: "League of Legends key art",
     rank: "Bronze IV",
-    rankIcon: "/bronze-rank.png",
+    rankIcon: "/images/gaming/bronze-rank.png",
     accent: "#8b5b3c",
     coverPosition: "center top",
   },
@@ -142,11 +142,11 @@ function GameCard({
 }
 
 const GAME_IMAGE_PRELOAD_SRCS = [
-  "/valorant-cover.png",
-  "/tft-cover.png",
-  "/league-cover.png",
-  "/tft-rank.png",
-  "/bronze-rank.png",
+  "/images/gaming/valorant-cover.png",
+  "/images/gaming/tft-cover.png",
+  "/images/gaming/league-cover.png",
+  "/images/gaming/tft-rank.png",
+  "/images/gaming/bronze-rank.png",
   "https://xpulz.com/img/game/valorant/tiers/ascendant2.png",
 ] as const;
 

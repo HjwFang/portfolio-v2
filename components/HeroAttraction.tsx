@@ -17,7 +17,7 @@ import {
 const ICOSPHERE_DISPLAY_SCALE = 0.9;
 
 function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInteractionRef }) {
-    const { scene } = useGLTF("/icosphere.glb");
+    const { scene } = useGLTF("/models/icosphere.glb");
     const groupRef = useRef<THREE.Group>(null);
     const themeColor = useThemeForegroundLinearColor();
     const edgeMaterialsRef = useRef<THREE.LineBasicMaterial[]>([]);
@@ -192,7 +192,7 @@ function IcosphereModel({ interactionRef }: { interactionRef: HeroAttractionInte
     );
 }
 
-useGLTF.preload("/icosphere.glb");
+useGLTF.preload("/models/icosphere.glb");
 
 export default function HeroAttraction() {
     const heroNavHoverCtx = useHeroNavHoverContext();

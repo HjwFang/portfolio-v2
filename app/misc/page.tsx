@@ -19,7 +19,7 @@ type GameCard = {
 const GAMES: GameCard[] = [
   {
     title: "VALORANT",
-    coverArt: "/valorant-cover.png",
+    coverArt: "/images/gaming/valorant-cover.png",
     coverAlt: "VALORANT key art poster",
     rank: "Ascendant II",
     rankIcon: "https://xpulz.com/img/game/valorant/tiers/ascendant2.png",
@@ -28,20 +28,20 @@ const GAMES: GameCard[] = [
   },
   {
     title: "Teamfight Tactics",
-    coverArt: "/tft-cover.png",
+    coverArt: "/images/gaming/tft-cover.png",
     coverAlt: "Teamfight Tactics key art",
     rank: "Plat II",
-    rankIcon: "/tft-rank.png",
+    rankIcon: "/images/gaming/tft-rank.png",
     accent: "#2ea3b0",
     titleClassName: "max-w-[12ch]",
     coverPosition: "center center",
   },
   {
     title: "League of Legends",
-    coverArt: "/league-cover.png",
+    coverArt: "/images/gaming/league-cover.png",
     coverAlt: "League of Legends key art",
     rank: "Bronze IV",
-    rankIcon: "/bronze-rank.png",
+    rankIcon: "/images/gaming/bronze-rank.png",
     accent: "#8b5b3c",
     coverPosition: "center top",
   },

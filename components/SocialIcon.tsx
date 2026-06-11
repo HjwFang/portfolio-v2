@@ -1,5 +1,5 @@
 import CrossingCornerBorder from "./CrossingCornerBorder";
-import { ReactNode } from "react";
+import { MouseEvent, ReactNode } from "react";
 
 interface SocialIconProps {
     href: string;
@@ -7,16 +7,21 @@ interface SocialIconProps {
     disabled?: boolean;
     tooltip?: string;
     isExternal?: boolean;
+    onHover?: (label: string | null, e?: MouseEvent) => void;
 }
 
-export default function SocialIcon({ href, icon, disabled, tooltip, isExternal = true }: SocialIconProps) {
+export default function SocialIcon({ href, icon, disabled, tooltip, isExternal = true, onHover }: SocialIconProps) {
+    const label = tooltip;
+
     return (
         <a
             href={disabled ? "#" : href}
             target={disabled ? undefined : (isExternal ? "_blank" : undefined)}
             rel={isExternal && !disabled ? "noopener noreferrer" : undefined}
             className={`group block transition-all duration-300 ${disabled ? 'cursor-not-allowed opacity-50' : 'active:scale-95'}`}
-            title={tooltip}
+            onMouseEnter={label && onHover ? (e) => onHover(label, e) : undefined}
+            onMouseMove={label && onHover ? (e) => onHover(label, e) : undefined}
+            onMouseLeave={onHover ? () => onHover(null) : undefined}
         >
             <CrossingCornerBorder 
                 bleed="clamp(2px, 0.208vw, 4px)"

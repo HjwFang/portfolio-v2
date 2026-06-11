@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-const buffer = fs.readFileSync('./public/star.glb');
+const buffer = fs.readFileSync('./public/models/star.glb');
 const magic = buffer.readUInt32LE(0);
 if (magic !== 0x46546C67) {
     console.log('Not a GLB file');

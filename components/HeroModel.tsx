@@ -7,7 +7,7 @@ import * as THREE from "three";
 import { useThemeForegroundLinearColor } from "@/components/useThemeColor";
 
 function Model() {
-    const { scene } = useGLTF("/star.glb");
+    const { scene } = useGLTF("/models/star.glb");
     const groupRef = useRef<THREE.Group>(null);
     const themeColor = useThemeForegroundLinearColor();
 
@@ -128,7 +128,7 @@ function Model() {
     );
 }
 
-useGLTF.preload("/star.glb");
+useGLTF.preload("/models/star.glb");
 
 export default function HeroModel() {
     return (

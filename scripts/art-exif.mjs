@@ -1,5 +1,5 @@
 /**
- * Dump EXIF capture dates for everything in public/art/.
+ * Dump EXIF capture dates for everything in public/art/originals/.
  * Writes a small JSON manifest at scripts/art-meta.json with { file, year, date }.
  */
 import fs from "node:fs/promises";
@@ -11,7 +11,7 @@ import exifr from "exifr";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
-const SRC_DIR = path.join(ROOT, "public", "art");
+const SRC_DIR = path.join(ROOT, "public", "art", "originals");
 const OUT_FILE = path.join(__dirname, "art-meta.json");
 
 async function readDate(srcPath) {

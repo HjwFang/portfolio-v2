@@ -1,5 +1,5 @@
 /**
- * Clean & crop art photos in public/art/.
+ * Clean & crop art photos in public/art/originals/.
  *
  * Cropping strategy (two-stage):
  *
@@ -30,7 +30,7 @@ import sharp from "sharp";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT = path.resolve(__dirname, "..");
-const SRC_DIR = path.join(ROOT, "public", "art");
+const SRC_DIR = path.join(ROOT, "public", "art", "originals");
 const OUT_DIR = path.join(ROOT, "public", "art", "cleaned");
 
 const MAX_EDGE = 1600;
