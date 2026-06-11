@@ -19,7 +19,7 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
       <div className="flex min-h-screen flex-col lg:flex-row h-full">
         {/* Sidebar (Desktop) / Header Area (Mobile) */}
         <div className="flex flex-col lg:w-fit lg:h-screen lg:sticky lg:top-0 justify-between z-20">
-          <div className="flex-1 flex flex-col border-x border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)]">
+          <div className="flex-1 flex flex-col border-x border-b lg:border-b-0 border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] lg:pb-0">
             <header className="shrink-0 pt-[7vh] sm:pt-[10vh]">
               <div className="flex w-fit flex-col items-start">
                 <div className="content-stretch flex flex-col sm:flex-row items-start sm:items-end justify-start gap-[clamp(18px,1.5vw,28px)] pointer-events-none">
@@ -73,7 +73,7 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
           </div>
         </div>
 
-        <main className="flex-1 flex flex-col justify-start pt-[7vh] sm:pt-[10vh] px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] lg:pb-0 min-h-[50vh] lg:min-h-screen z-10">
+        <main className="flex-1 flex flex-col justify-start pt-[clamp(32px,5vh,48px)] lg:pt-[10vh] px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] lg:pb-0 min-h-[50vh] lg:min-h-screen z-10">
           {children}
         </main>
 
