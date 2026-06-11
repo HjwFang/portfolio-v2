@@ -1,6 +1,7 @@
 "use client";
 
 import CascadeIn from "@/components/CascadeIn";
+import RankBadge from "@/components/RankBadge";
 import RevealImage from "@/components/RevealImage";
 import { useEffect, useState } from "react";
 
@@ -95,29 +96,10 @@ function GameCard({
     </>
   );
 
-  const rankBadge = (
-    <>
-      <div
-        className="absolute inset-[18%] rounded-full opacity-70 blur-[clamp(14px,1.25vw,18px)]"
-        style={{ backgroundColor: accent }}
-        aria-hidden
-      />
-      <RevealImage
-        src={rankIcon}
-        alt={`${title} rank icon for ${rank}`}
-        fill
-        priority={imagePriority}
-        sizes="(max-width: 640px) 24vw, 6vw"
-        className="object-contain drop-shadow-[0_14px_24px_rgba(0,0,0,0.35)]"
-        placeholder="blur"
-        blurDataURL={IMAGE_BLUR_DATA_URL}
-      />
-    </>
-  );
-
   const coverShellClassName =
     "relative h-full w-full overflow-hidden border border-foreground/10 bg-foreground/5 transition-colors duration-300";
-  const rankShellClassName = `pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 ${rankSizeClass}`;
+  const rankShellClassName =
+    "pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2";
 
   return (
     <div className="relative pb-[clamp(32px,4.5vw,48px)]">
@@ -131,10 +113,27 @@ function GameCard({
         )}
         {cascadeOn ? (
           <CascadeIn step={cascadeBaseStep + 1} className={rankShellClassName}>
-            {rankBadge}
+            <RankBadge
+              accent={accent}
+              rankIcon={rankIcon}
+              rank={rank}
+              gameTitle={title}
+              sizeClass={rankSizeClass}
+              imageSizes="(max-width: 640px) 24vw, 6vw"
+              priority={imagePriority}
+            />
           </CascadeIn>
         ) : (
-          <div className={rankShellClassName}>{rankBadge}</div>
+          <div className={rankShellClassName}>
+            <RankBadge
+              accent={accent}
+              rankIcon={rankIcon}
+              rank={rank}
+              gameTitle={title}
+              sizeClass={rankSizeClass}
+              imageSizes="(max-width: 640px) 24vw, 6vw"
+            />
+          </div>
         )}
       </div>
     </div>

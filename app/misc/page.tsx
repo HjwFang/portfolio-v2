@@ -1,4 +1,5 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
+import RankBadge from "@/components/RankBadge";
 import SectionContent from "@/components/SectionContent";
 import RevealImage from "@/components/RevealImage";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
@@ -71,22 +72,14 @@ function GameTile({ title, coverArt, coverAlt, rank, rankIcon, accent, coverPosi
             <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-foreground/55 via-transparent to-transparent" />
           </div>
         </CrossingCornerBorder>
-        <div
-          className={`pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2 ${rankSizeClass}`}
-        >
-          <div
-            className="absolute inset-[18%] rounded-full opacity-70 blur-[clamp(14px,2vw,22px)]"
-            style={{ backgroundColor: accent }}
-            aria-hidden
-          />
-          <RevealImage
-            src={rankIcon}
-            alt={`${title} rank icon for ${rank}`}
-            fill
-            sizes="(max-width: 768px) 25vw, 7vw"
-            className="object-contain drop-shadow-[0_16px_28px_rgba(0,0,0,0.35)]"
-            placeholder="blur"
-            blurDataURL={IMAGE_BLUR_DATA_URL}
+        <div className="pointer-events-none absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
+          <RankBadge
+            accent={accent}
+            rankIcon={rankIcon}
+            rank={rank}
+            gameTitle={title}
+            sizeClass={rankSizeClass}
+            imageSizes="(max-width: 768px) 25vw, 7vw"
           />
         </div>
       </div>
