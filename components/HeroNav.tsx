@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
+import { readHomeNavigationFromUrl, writeSectionToUrl } from "@/lib/homeNavigation";
 
 const ITEMS = [
   { num: "01", label: "experiences" },
@@ -28,12 +29,22 @@ export default function HeroNav() {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const activeIndex = selectedIndex;
   const heroNavHoverCtx = useHeroNavHoverContext();
+  const setContextHoveredIndex = heroNavHoverCtx?.setHoveredIndex;
   const listRef = useRef<HTMLUListElement>(null);
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [slideRect, setSlideRect] = useState<{ top: number; height: number } | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
   const swipeAudioRef = useRef<HTMLAudioElement | null>(null);
   const isFirstRender = useRef(true);
+  const hasRestoredFromUrl = useRef(false);
+
+  useLayoutEffect(() => {
+    if (hasRestoredFromUrl.current) return;
+    const { sectionIndex } = readHomeNavigationFromUrl();
+    hasRestoredFromUrl.current = true;
+    setSelectedIndex(sectionIndex);
+    setContextHoveredIndex?.(sectionIndex);
+  }, [setContextHoveredIndex]);
 
   useEffect(() => {
     swipeAudioRef.current = new Audio("/sounds/driken5482-swipe-236674.mp3");
@@ -65,8 +76,10 @@ export default function HeroNav() {
 
   // Keep attraction/content state aligned with the clicked nav item.
   useEffect(() => {
-    heroNavHoverCtx?.setHoveredIndex(activeIndex);
-  }, [activeIndex, heroNavHoverCtx]);
+    setContextHoveredIndex?.(activeIndex);
+    if (!hasRestoredFromUrl.current) return;
+    writeSectionToUrl(activeIndex);
+  }, [activeIndex, setContextHoveredIndex]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

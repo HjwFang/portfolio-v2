@@ -35,7 +35,8 @@ const OUT_DIR = path.join(ROOT, "public", "art", "cleaned");
 
 const MAX_EDGE = 1600;
 const THUMB_EDGE = 720;
-const JPEG_QUALITY = 78;
+const WEBP_QUALITY = 82;
+const THUMB_WEBP_QUALITY = 76;
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -328,18 +329,16 @@ async function processOne(srcPath, outPath, thumbPath) {
   const isColor = sat > 0.09;
   const saturation = isColor ? 1.08 : 0.92;
 
-  const finalize = (pipeline, maxEdge) =>
+  const finalize = (pipeline, maxEdge, quality) =>
     pipeline
       .resize({ width: maxEdge, height: maxEdge, fit: "inside", withoutEnlargement: true })
       .linear(a, b)
       .modulate({ saturation, brightness: 1.0 })
       .sharpen({ sigma: 0.6, m1: 0.5, m2: 1.0 })
-      .jpeg({ quality: JPEG_QUALITY, mozjpeg: true, progressive: true, chromaSubsampling: "4:4:4" });
+      .webp({ quality, effort: 4 });
 
-  await finalize(cropped.clone(), MAX_EDGE).toFile(outPath);
-  await finalize(cropped.clone(), THUMB_EDGE)
-    .jpeg({ quality: 72, mozjpeg: true, progressive: true, chromaSubsampling: "4:2:0" })
-    .toFile(thumbPath);
+  await finalize(cropped.clone(), MAX_EDGE, WEBP_QUALITY).toFile(outPath);
+  await finalize(cropped.clone(), THUMB_EDGE, THUMB_WEBP_QUALITY).toFile(thumbPath);
 
   const [outStat, thumbStat] = await Promise.all([fs.stat(outPath), fs.stat(thumbPath)]);
   return { bbox, outSize: outStat.size, thumbSize: thumbStat.size };
@@ -360,8 +359,8 @@ async function main() {
   for (const file of inputs) {
     const srcPath = path.join(SRC_DIR, file);
     const base = file.replace(/\.[^.]+$/, "").toLowerCase();
-    const outPath = path.join(OUT_DIR, `${base}.jpg`);
-    const thumbPath = path.join(OUT_DIR, "thumb", `${base}.jpg`);
+    const outPath = path.join(OUT_DIR, `${base}.webp`);
+    const thumbPath = path.join(OUT_DIR, "thumb", `${base}.webp`);
     try {
       const t0 = Date.now();
       const { bbox, outSize, thumbSize } = await processOne(srcPath, outPath, thumbPath);

@@ -3,7 +3,7 @@
 import CascadeIn from "@/components/CascadeIn";
 import RankBadge from "@/components/RankBadge";
 import RevealImage from "@/components/RevealImage";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 import HeroShell from "@/components/HeroShell";
 import PortfolioListCard from "@/components/PortfolioListCard";
@@ -15,6 +15,11 @@ import { EXPERIENCE_GRID_ITEMS, PROJECT_GRID_ITEMS } from "@/lib/portfolioConten
 import { HERO_CASCADE, portfolioCardCascadeStep } from "@/lib/heroCascade";
 import ArtGallery from "@/components/ArtGallery";
 import { ART_PIECES } from "@/app/misc/art-data";
+import {
+  type MiscTab,
+  readHomeNavigationFromUrl,
+  writeMiscTabToUrl,
+} from "@/lib/homeNavigation";
 
 export default function Home() {
   return (
@@ -59,8 +64,6 @@ const MISC_TABS = [
   { id: "games", label: "games" },
   { id: "sports", label: "sports" },
 ] as const;
-
-type MiscTab = (typeof MISC_TABS)[number]["id"];
 
 function GameCard({
   title,
@@ -154,6 +157,16 @@ function SectionRenderer() {
   const index = context?.hoveredIndex ?? 0;
   const [miscTab, setMiscTab] = useState<MiscTab>("art");
 
+  useLayoutEffect(() => {
+    const { miscTab: restoredTab } = readHomeNavigationFromUrl();
+    setMiscTab(restoredTab);
+  }, []);
+
+  const handleMiscTabChange = (tab: MiscTab) => {
+    setMiscTab(tab);
+    writeMiscTabToUrl(tab);
+  };
+
   useEffect(() => {
     if (index !== 2) return;
     for (const src of GAME_IMAGE_PRELOAD_SRCS) {
@@ -162,8 +175,14 @@ function SectionRenderer() {
     }
   }, [index]);
 
+  const fillArtGallery = index === 2 && miscTab === "art";
+
   return (
-    <div className="flex w-full max-w-[92vw] flex-col gap-[clamp(16px,1.6vw,24px)]">
+    <div
+      className={`flex w-full max-w-[92vw] flex-col gap-[clamp(16px,1.6vw,24px)] ${
+        fillArtGallery ? "min-h-0 flex-1" : ""
+      }`}
+    >
       {index === 0 && (
         <section className="w-full">
           <CascadeRevealHeading
@@ -207,7 +226,9 @@ function SectionRenderer() {
         </section>
       )}
       {index === 2 && (
-        <section className="min-w-0 w-full">
+        <section
+          className={`min-w-0 w-full ${fillArtGallery ? "flex min-h-0 flex-1 flex-col" : ""}`}
+        >
           <CascadeReveal
             step={HERO_CASCADE.main}
             className="mb-[clamp(20px,2vh,28px)] flex w-full flex-wrap items-center justify-between gap-[clamp(16px,1.6vw,24px)]"
@@ -218,16 +239,25 @@ function SectionRenderer() {
             <IndexedSelector
               items={MISC_TABS}
               value={miscTab}
-              onChange={(tab) => setMiscTab(tab as MiscTab)}
+              onChange={(tab) => handleMiscTabChange(tab as MiscTab)}
               ariaLabel="Misc gallery selector"
               showArrow={false}
             />
           </CascadeReveal>
 
-          <div className="w-full transition-opacity duration-300">
+          <div
+            className={`w-full transition-opacity duration-300 ${
+              fillArtGallery ? "flex min-h-0 flex-1 flex-col" : ""
+            }`}
+          >
             {miscTab === "art" && (
-              <div key="misc-art" className="min-w-0 w-full">
-                <ArtGallery pieces={ART_PIECES} cascade cascadeBaseStep={HERO_CASCADE.main + 1} />
+              <div key="misc-art" className="flex min-h-0 min-w-0 w-full flex-1 flex-col">
+                <ArtGallery
+                  pieces={ART_PIECES}
+                  cascade
+                  cascadeBaseStep={HERO_CASCADE.main + 1}
+                  fillHeight
+                />
               </div>
             )}
 

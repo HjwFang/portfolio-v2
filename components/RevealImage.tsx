@@ -23,6 +23,7 @@ export default function RevealImage({
   ...rest
 }: RevealImageProps) {
   const rootRef = useRef<HTMLSpanElement>(null);
+  const revealPlayedRef = useRef(!!priority);
   const [revealed, setRevealed] = useState(!!priority);
   const [loaded, setLoaded] = useState(false);
 
@@ -53,7 +54,10 @@ export default function RevealImage({
   }, [src]);
 
   useEffect(() => {
-    if (priority) return;
+    if (priority) {
+      setRevealed(true);
+      return;
+    }
 
     const el = rootRef.current;
     if (!el) return;
@@ -75,11 +79,13 @@ export default function RevealImage({
     return () => obs.disconnect();
   }, [priority]);
 
-  const revealClass = priority
-    ? ""
-    : revealed
-      ? "portfolio-image-reveal--shown"
-      : "portfolio-image-reveal--pending";
+  let revealClass = "";
+  if (!revealed && !priority) {
+    revealClass = "portfolio-image-reveal--pending";
+  } else if (!revealPlayedRef.current) {
+    revealPlayedRef.current = true;
+    if (!priority) revealClass = "portfolio-image-reveal--shown";
+  }
 
   const imageClass = joinClasses(
     className,

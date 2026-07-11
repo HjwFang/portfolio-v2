@@ -2,24 +2,31 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
-function imageIsReady(img: HTMLImageElement) {
-  return img.complete && img.naturalWidth > 0;
+function imageIsSettled(img: HTMLImageElement) {
+  return img.complete;
 }
 
 function waitForImages(container: HTMLElement, onReady: () => void) {
   let cancelled = false;
+  let emptyFallback: number | undefined;
 
   const check = () => {
     if (cancelled) return;
     const imgs = [...container.querySelectorAll("img")];
-    // Wait until Next/Image mounts <img> — never treat "no images yet" as ready.
-    if (imgs.length === 0) return;
-    if (imgs.every(imageIsReady)) {
+    if (imgs.length === 0) {
+      emptyFallback ??= window.setTimeout(() => {
+        if (!cancelled) onReady();
+      }, 280);
+      return;
+    }
+    window.clearTimeout(emptyFallback);
+    emptyFallback = undefined;
+    if (imgs.every(imageIsSettled)) {
       onReady();
       return;
     }
     for (const img of imgs) {
-      if (!imageIsReady(img)) {
+      if (!imageIsSettled(img)) {
         img.addEventListener("load", check, { once: true });
         img.addEventListener("error", check, { once: true });
       }
@@ -32,6 +39,7 @@ function waitForImages(container: HTMLElement, onReady: () => void) {
 
   return () => {
     cancelled = true;
+    window.clearTimeout(emptyFallback);
     mo.disconnect();
   };
 }
@@ -51,7 +59,15 @@ export default function CascadeIn({ step, className, style, children }: CascadeI
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    return waitForImages(el, () => setReady(true));
+    const fallback = window.setTimeout(() => setReady(true), 900);
+    const cleanup = waitForImages(el, () => {
+      window.clearTimeout(fallback);
+      setReady(true);
+    });
+    return () => {
+      window.clearTimeout(fallback);
+      cleanup();
+    };
   }, []);
 
   const cascadeStyle: CSSProperties = {
@@ -62,7 +78,7 @@ export default function CascadeIn({ step, className, style, children }: CascadeI
   return (
     <div
       ref={ref}
-      className={`${className ?? ""} ${ready ? "portfolio-cascade-in" : "invisible"}`}
+      className={`${className ?? ""} ${ready ? "portfolio-cascade-in" : "opacity-0"}`}
       style={cascadeStyle}
     >
       {children}

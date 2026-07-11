@@ -110,7 +110,7 @@ export default function MiscPage() {
               art
             </h3>
             <p className="mt-3 font-quicksand font-light leading-relaxed text-foreground/75 text-[clamp(0.9375rem,1.35vw,1.125rem)]">
-              a selection of sketchbook pieces over the years — pencil, ink, oil pastel. tap any tile to view full size.
+              a selection of sketchbook pieces over the years — pencil, ink, oil pastel. scroll or drag to spin through.
             </p>
           </div>
 
