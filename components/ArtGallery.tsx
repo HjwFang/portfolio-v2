@@ -2,15 +2,18 @@
 
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import CascadeIn from "@/components/CascadeIn";
+import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import IndexedSelector from "@/components/IndexedSelector";
 import RevealImage from "@/components/RevealImage";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import {
   artPieceYearSpans,
+  PINNED_ART_PIECES,
   sortArtPiecesByYear,
   type ArtDisplayRotateDeg,
   type ArtPiece,
   type ArtPieceYearSpan,
+  type PinnedArtPiece,
 } from "@/app/misc/art-data";
 
 // ─── roulette math ───────────────────────────────────────────────────────────
@@ -73,8 +76,15 @@ const PIVOT_TOP_RATIO = 0.43;
 const PIVOT_TOP = `${PIVOT_TOP_RATIO * 100}%`;
 /** Trim empty space above the roulette stage inside the outer box. */
 const STAGE_TOP_INSET = "clamp(6px,1.2vh,18px)";
-/** Top/bottom fade — cards and tracker feather to transparent at the edges. */
-const EDGE_FEATHER = "clamp(32px, 9vh, 80px)";
+/** Top/bottom fade — cards and scroll bar feather to transparent at the edges. */
+const EDGE_FEATHER = "clamp(18px, 5.5vh, 80px)";
+const EDGE_FEATHER_MASK =
+  "linear-gradient(to bottom, transparent, black var(--edge-feather), black calc(100% - var(--edge-feather)), transparent)";
+/** Stage shell must have explicit height — flex-1 alone does not expand into parent min-height. */
+const STAGE_SHELL_MIN_H = "min-h-[clamp(280px,38vh,560px)]";
+const STAGE_SHELL_MIN_H_FILL = "min-h-[clamp(240px,32vh,520px)]";
+/** Room for the year/underscore tracker on narrow viewports. */
+const STAGE_LEFT_INSET = "clamp(60px,11vw,96px)";
 
 /** Map virtual wheel angle to upright card offsets along a vertical arc. */
 function arcOffset(angleDeg: number, spacingRadius: number, curveRadius: number) {
@@ -95,26 +105,31 @@ function displayRotateTransform(deg?: ArtDisplayRotateDeg) {
   return `rotate(${deg}deg)`;
 }
 
-/** Matches underscore column `leading-[1.28]`. */
-const TRACK_LINE_HEIGHT_EM = 1.28;
-/** Ripple falloff — higher = tighter wave around the active slot. */
-const TRACK_RIPPLE_DECAY = 0.58;
+/** Ripple falloff — higher = tighter concentration around the active line. */
+const TRACK_RIPPLE_DECAY = 0.68;
 
 function scrollTrackerRipple(index: number, focus: number, count: number) {
   const dist = continuousIndexDistance(focus, index, count);
   const wave = Math.exp(-dist * TRACK_RIPPLE_DECAY);
   return {
-    opacity: 0.1 + wave * 0.9,
-    scaleX: 0.45 + wave * 1.15,
-    scaleY: 0.7 + wave * 0.5,
+    opacity: 0.4 + wave * 0.3,
+    /** 0 → short tick; 1 → full tracker bar width (see TRACK_BAR_WIDTH). */
+    scaleX: 0.22 + wave * 0.48,
     wave,
   };
 }
 
-/** Minimum px gap between adjacent card bounds on the wheel arc. */
+/** Minimum px gap between adjacent card bounds on the wheel arc (desktop). */
 const ARC_GAP = 58;
+const ARC_GAP_COMPACT = 30;
 /** Load full images for the focused card and this many neighbors on each side. */
 const IMAGE_LOAD_RADIUS = 4;
+
+type StageMetrics = { height: number; width: number };
+
+function isCompactStage(stage: StageMetrics) {
+  return stage.height < 420 || stage.width < 520;
+}
 
 function maxPieceExtent(slotH: number) {
   const { w, h } = pieceDimensions(slotH);
@@ -128,29 +143,39 @@ function minRadiusForCount(count: number, extent: number, gap: number) {
   return (extent + gap) / (2 * sinHalfStep);
 }
 
-function computeRouletteLayout(pieces: ArtPiece[], stageH: number) {
+function computeRouletteLayout(pieces: ArtPiece[], stage: StageMetrics) {
   const count = pieces.length;
   const angleStep = count > 0 ? 360 / count : 360;
-  let slotH = Math.round(Math.min(320, Math.max(168, stageH * 0.46)));
+  const compact = isCompactStage(stage);
+  const arcGap = compact ? ARC_GAP_COMPACT : ARC_GAP;
+  const slotRatio = compact ? 0.5 : 0.58;
+  const slotMax = compact ? 300 : 400;
+  const slotMin = compact ? 148 : 200;
+  const slotFloor = compact ? 128 : 160;
+
+  let slotH = Math.round(
+    Math.min(slotMax, Math.max(slotMin, stage.height * slotRatio)),
+  );
 
   for (let attempt = 0; attempt < 10; attempt++) {
     const extent = maxPieceExtent(slotH);
-    const minRadius = minRadiusForCount(count, extent, ARC_GAP);
+    const minRadius = minRadiusForCount(count, extent, arcGap);
     const radius = Math.ceil(minRadius);
 
-    if (radius <= stageH * 5 || slotH <= 120) {
-      return { angleStep, slotH, radius, count };
+    if (radius <= stage.height * 5 || slotH <= slotFloor) {
+      return { angleStep, slotH, radius, count, arcGap };
     }
 
-    slotH = Math.max(120, Math.round(slotH * 0.9));
+    slotH = Math.max(slotFloor, Math.round(slotH * 0.9));
   }
 
   const extent = maxPieceExtent(slotH);
   return {
     angleStep,
     slotH,
-    radius: Math.ceil(minRadiusForCount(count, extent, ARC_GAP)),
+    radius: Math.ceil(minRadiusForCount(count, extent, arcGap)),
     count,
+    arcGap,
   };
 }
 
@@ -193,10 +218,24 @@ function applyTrackerStyles(
   for (let i = 0; i < count; i++) {
     const el = underscoreEls[i];
     if (!el) continue;
-    const { opacity, scaleX, scaleY } = scrollTrackerRipple(i, focus, count);
+    const { opacity, scaleX } = scrollTrackerRipple(i, focus, count);
     el.style.opacity = String(opacity);
-    el.style.transform = `scale(${scaleX}, ${scaleY})`;
+    el.style.transform = `scaleX(${scaleX})`;
   }
+}
+
+/** Year label column, gap, and scroll-bar line width (left → right). */
+const TRACK_YEAR_WIDTH = "clamp(28px,2.5em,36px)";
+const TRACK_YEAR_GAP = "clamp(8px,0.6vw,12px)";
+const TRACK_BAR_WIDTH = "clamp(24px,2.25em,36px)";
+const TRACK_BAR_LEFT = `calc(${TRACK_YEAR_WIDTH} + ${TRACK_YEAR_GAP})`;
+/** Keep first/last tracker marks inside the stage (translate-y-1/2 extends past anchor). */
+const TRACK_EDGE_INSET_PCT = 8;
+
+function trackTopPct(index: number, count: number) {
+  if (count <= 1) return 50;
+  const t = index / (count - 1);
+  return TRACK_EDGE_INSET_PCT + t * (100 - 2 * TRACK_EDGE_INSET_PCT);
 }
 
 const ArtScrollTracker = memo(function ArtScrollTracker({
@@ -208,42 +247,377 @@ const ArtScrollTracker = memo(function ArtScrollTracker({
   yearSpans: ArtPieceYearSpan[];
   assignUnderscoreRef: (index: number, el: HTMLSpanElement | null) => void;
 }) {
+  const count = pieces.length;
+
+  const yearTopPct = (start: number, end: number) =>
+    trackTopPct((start + end) / 2, count);
+
   return (
     <div
-      className="pointer-events-none absolute left-0 z-20 -translate-y-1/2 select-none"
-      style={{
-        top: "calc(var(--stage-top-inset) + (100% - var(--stage-top-inset)) * var(--pivot-top))",
-      }}
+      className="pointer-events-none absolute bottom-0 left-0 z-20 w-[var(--stage-left-inset)] select-none"
+      style={{ top: STAGE_TOP_INSET }}
       aria-hidden
     >
-      <div
-        className="grid min-w-0 font-mono text-[clamp(12px,1.05vw,16px)] font-medium leading-[1.28] tracking-tight"
-        style={{
-          gridTemplateColumns: "minmax(1.35em, auto) minmax(2.75em, auto)",
-          gridTemplateRows: `repeat(${pieces.length}, ${TRACK_LINE_HEIGHT_EM}em)`,
-          columnGap: "clamp(6px, 0.55vw, 10px)",
-        }}
-      >
-        {pieces.map((p, i) => (
+      <div className="relative h-full">
+        {yearSpans.map(({ year, start, end }) => (
           <span
-            key={p.file}
-            ref={(el) => assignUnderscoreRef(i, el)}
-            className="col-start-1 inline-block origin-left will-change-[opacity,transform] self-center"
-            style={{ gridRow: i + 1 }}
+            key={`${year}-${start}`}
+            className="absolute left-0 -translate-y-1/2 text-right font-quicksand font-light tabular-nums text-[clamp(10px,2.4vw,11px)] leading-[1.15] tracking-tight text-foreground whitespace-nowrap"
+            style={{ top: `${yearTopPct(start, end)}%`, width: TRACK_YEAR_WIDTH }}
           >
-            _
+            {year}
           </span>
         ))}
-        {yearSpans.map(({ year, start, end }, index) => (
-          <div
-            key={`${year}-${start}`}
-            className="col-start-2 flex items-center self-stretch"
-            style={{ gridRow: `${start + 1} / ${end + 2}` }}
-          >
-            <span className="font-quicksand font-light tabular-nums text-[clamp(9px,0.75vw,11px)] leading-[1.15] tracking-tight text-foreground whitespace-nowrap">
-              {year}
-            </span>
-          </div>
+        <div
+          className="absolute inset-0"
+          style={{
+            WebkitMaskImage: EDGE_FEATHER_MASK,
+            maskImage: EDGE_FEATHER_MASK,
+          }}
+        >
+          {pieces.map((p, i) => (
+            <span
+              key={p.file}
+              ref={(el) => assignUnderscoreRef(i, el)}
+              className="absolute block origin-left -translate-y-1/2 will-change-[opacity,transform] h-px bg-foreground"
+              style={{
+                top: `${trackTopPct(i, count)}%`,
+                left: TRACK_BAR_LEFT,
+                width: TRACK_BAR_WIDTH,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+});
+
+/** Gap between pinned carousel slides (px). */
+const PINNED_GAP = 36;
+/** Left/right fade — pinned slides feather to transparent at the stage edges. */
+const PINNED_SIDE_FEATHER = "clamp(28px, 9vw, 140px)";
+const PINNED_SIDE_FEATHER_MASK =
+  "linear-gradient(to right, transparent, black var(--pinned-side-feather), black calc(100% - var(--pinned-side-feather)), transparent)";
+/** Auto-scroll speed for the pinned carousel (px/s). */
+const PINNED_SCROLL_SPEED = 52;
+/** Intro spin peaks here, then eases down to PINNED_SCROLL_SPEED. */
+const PINNED_INTRO_PEAK_SPEED = 1100;
+const PINNED_INTRO_DURATION_MS = 2000;
+const PINNED_WHEEL_SENSITIVITY = 0.9;
+const PINNED_DRAG_SENSITIVITY = 1.05;
+const PINNED_MOMENTUM_GAIN = 0.38;
+const PINNED_VELOCITY_DAMPING = 0.93;
+const PINNED_VELOCITY_CUTOFF = 0.45;
+
+/** Smooth ease-out: fast start, long soft landing. */
+function introEaseOut(t: number) {
+  const x = Math.min(Math.max(t, 0), 1);
+  return 1 - (1 - x) ** 4;
+}
+
+function pinnedIntroSpeed(elapsedMs: number) {
+  const eased = introEaseOut(elapsedMs / PINNED_INTRO_DURATION_MS);
+  return PINNED_INTRO_PEAK_SPEED + (PINNED_SCROLL_SPEED - PINNED_INTRO_PEAK_SPEED) * eased;
+}
+
+/** Max share of stage height / width a pinned slide may occupy. */
+const PINNED_MAX_HEIGHT_RATIO = 0.72;
+const PINNED_MAX_WIDTH_RATIO = 0.58;
+
+/** Fit each piece to its true aspect ratio inside the stage max box. */
+function pinnedSlideSize(
+  piece: PinnedArtPiece,
+  stageHeight: number,
+  stageWidth: number,
+) {
+  if (stageHeight <= 0 || stageWidth <= 0) return { width: 0, height: 0 };
+  const maxH = stageHeight * PINNED_MAX_HEIGHT_RATIO;
+  const maxW = stageWidth * PINNED_MAX_WIDTH_RATIO;
+  const ar = piece.width / piece.height;
+  let height = maxH;
+  let width = height * ar;
+  if (width > maxW) {
+    width = maxW;
+    height = width / ar;
+  }
+  return { width: Math.round(width), height: Math.round(height) };
+}
+
+function pinnedSegmentWidth(
+  pieces: PinnedArtPiece[],
+  stageHeight: number,
+  stageWidth: number,
+) {
+  if (pieces.length === 0 || stageHeight <= 0 || stageWidth <= 0) return 0;
+  const widths = pieces.map((p) => pinnedSlideSize(p, stageHeight, stageWidth).width);
+  return widths.reduce((sum, w) => sum + w, 0) + PINNED_GAP * pieces.length;
+}
+
+function wrapPinnedOffset(offset: number, segmentWidth: number) {
+  if (segmentWidth <= 0) return offset;
+  let next = offset;
+  while (next <= -segmentWidth) next += segmentWidth;
+  while (next > 0) next -= segmentWidth;
+  return next;
+}
+
+function applyPinnedTrackTransform(track: HTMLDivElement | null, offset: number) {
+  if (!track) return;
+  track.style.transform = `translate3d(${offset}px, 0, 0)`;
+}
+
+const PinnedCarouselItem = memo(function PinnedCarouselItem({
+  piece,
+  stageHeight,
+  stageWidth,
+}: {
+  piece: PinnedArtPiece;
+  stageHeight: number;
+  stageWidth: number;
+}) {
+  const { width, height } = pinnedSlideSize(piece, stageHeight, stageWidth);
+
+  return (
+    <CrossingCornerBorder
+      bleed="clamp(4px,0.5vw,8px)"
+      thickness="clamp(1px,0.1vw,1.5px)"
+      className="inline-block shrink-0 leading-none text-foreground/20"
+    >
+      <RevealImage
+        src={`/art/pinned/${piece.file}`}
+        alt={piece.title ?? "Pinned art"}
+        width={width}
+        height={height}
+        wrapClassName="block leading-none"
+        className="block h-auto w-auto max-w-none"
+        sizes={`${width}px`}
+        placeholder="blur"
+        blurDataURL={IMAGE_BLUR_DATA_URL}
+      />
+    </CrossingCornerBorder>
+  );
+});
+
+const PinnedArtCarousel = memo(function PinnedArtCarousel({
+  pieces,
+  stageHeight,
+  stageWidth,
+  active,
+}: {
+  pieces: PinnedArtPiece[];
+  stageHeight: number;
+  stageWidth: number;
+  active: boolean;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const offsetRef = useRef(0);
+  const velocityRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+  const segmentWidthRef = useRef(0);
+  const autoScrollRef = useRef(true);
+  const draggingRef = useRef(false);
+  const lastPointerXRef = useRef(0);
+  const introPlayedRef = useRef(false);
+  const introStartRef = useRef<number | null>(null);
+
+  const segmentWidth = useMemo(
+    () => pinnedSegmentWidth(pieces, stageHeight, stageWidth),
+    [pieces, stageHeight, stageWidth],
+  );
+
+  const loopPieces = useMemo(
+    () => (pieces.length > 0 ? [...pieces, ...pieces] : []),
+    [pieces],
+  );
+
+  const nudgeOffset = useCallback((deltaPx: number, withMomentum = true) => {
+    introPlayedRef.current = true;
+    offsetRef.current = wrapPinnedOffset(
+      offsetRef.current + deltaPx,
+      segmentWidthRef.current,
+    );
+    if (withMomentum) {
+      velocityRef.current += deltaPx * PINNED_MOMENTUM_GAIN;
+    }
+    applyPinnedTrackTransform(trackRef.current, offsetRef.current);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const sync = () => {
+      autoScrollRef.current = !mq.matches;
+      if (mq.matches) {
+        introPlayedRef.current = true;
+      }
+    };
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
+  useLayoutEffect(() => {
+    segmentWidthRef.current = segmentWidth;
+    if (segmentWidth <= 0) return;
+    offsetRef.current = wrapPinnedOffset(offsetRef.current, segmentWidth);
+    applyPinnedTrackTransform(trackRef.current, offsetRef.current);
+  }, [segmentWidth]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !active) return;
+
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const delta =
+        Math.abs(event.deltaX) > Math.abs(event.deltaY)
+          ? event.deltaX
+          : event.deltaY;
+      nudgeOffset(-delta * PINNED_WHEEL_SENSITIVITY);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [active, nudgeOffset]);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !active) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      draggingRef.current = true;
+      introPlayedRef.current = true;
+      lastPointerXRef.current = event.clientX;
+      velocityRef.current = 0;
+      el.setPointerCapture(event.pointerId);
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (!draggingRef.current) return;
+      const dx = event.clientX - lastPointerXRef.current;
+      lastPointerXRef.current = event.clientX;
+      const delta = dx * PINNED_DRAG_SENSITIVITY;
+      nudgeOffset(delta, false);
+      velocityRef.current = delta;
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      if (el.hasPointerCapture(event.pointerId)) {
+        el.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("pointermove", onPointerMove);
+    el.addEventListener("pointerup", onPointerUp);
+    el.addEventListener("pointercancel", onPointerUp);
+
+    return () => {
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", onPointerUp);
+      el.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [active, nudgeOffset]);
+
+  useEffect(() => {
+    if (!active || segmentWidth <= 0) {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      return;
+    }
+
+    let last = performance.now();
+
+    const tick = (now: number) => {
+      const dt = Math.min((now - last) / 1000, 0.05);
+      last = now;
+
+      if (!draggingRef.current) {
+        velocityRef.current *= PINNED_VELOCITY_DAMPING;
+
+        if (Math.abs(velocityRef.current) > PINNED_VELOCITY_CUTOFF) {
+          offsetRef.current += velocityRef.current;
+        } else {
+          velocityRef.current = 0;
+
+          if (autoScrollRef.current) {
+            let speed = PINNED_SCROLL_SPEED;
+
+            if (!introPlayedRef.current) {
+              if (introStartRef.current === null) {
+                introStartRef.current = now;
+              }
+              const elapsed = now - introStartRef.current;
+              if (elapsed < PINNED_INTRO_DURATION_MS) {
+                speed = pinnedIntroSpeed(elapsed);
+              } else {
+                introPlayedRef.current = true;
+              }
+            }
+
+            offsetRef.current -= speed * dt;
+          }
+        }
+      }
+
+      offsetRef.current = wrapPinnedOffset(offsetRef.current, segmentWidthRef.current);
+      applyPinnedTrackTransform(trackRef.current, offsetRef.current);
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current !== null) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+    };
+  }, [active, segmentWidth]);
+
+  if (pieces.length === 0) return null;
+
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0 cursor-grab overflow-hidden active:cursor-grabbing"
+      style={{
+        touchAction: "none",
+        "--pinned-side-feather": PINNED_SIDE_FEATHER,
+        WebkitMaskImage: PINNED_SIDE_FEATHER_MASK,
+        maskImage: PINNED_SIDE_FEATHER_MASK,
+      } as React.CSSProperties}
+      aria-label="Pinned art carousel. Scroll or drag horizontally to browse pieces."
+      role="region"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "ArrowRight" || event.key === "PageDown") {
+          event.preventDefault();
+          nudgeOffset(-96);
+        } else if (event.key === "ArrowLeft" || event.key === "PageUp") {
+          event.preventDefault();
+          nudgeOffset(96);
+        }
+      }}
+    >
+      <div
+        ref={trackRef}
+        className="flex h-full items-center will-change-transform"
+        style={{ gap: PINNED_GAP }}
+      >
+        {loopPieces.map((piece, i) => (
+          <PinnedCarouselItem
+            key={`${piece.file}-${i}`}
+            piece={piece}
+            stageHeight={stageHeight}
+            stageWidth={stageWidth}
+          />
         ))}
       </div>
     </div>
@@ -337,6 +711,7 @@ export default function ArtGallery({
   fillHeight = false,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const stageShellRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Array<HTMLDivElement | null>>([]);
   const underscoreRefs = useRef<Array<HTMLSpanElement | null>>([]);
   const rotationRef = useRef(0);
@@ -346,18 +721,26 @@ export default function ArtGallery({
   const lastPointerYRef = useRef(0);
   const activeIndexRef = useRef(0);
   const loadedImageIndicesRef = useRef<Set<number>>(new Set());
-  const layoutRef = useRef<WheelLayout>({ angleStep: 360, slotH: 168, radius: 220, count: 0 });
+  const layoutRef = useRef<WheelLayout>({
+    angleStep: 360,
+    slotH: 168,
+    radius: 220,
+    count: 0,
+    arcGap: ARC_GAP,
+  });
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const [section, setSection] = useState<ArtGallerySection>("other");
-  const [stageH, setStageH] = useState(480);
+  const [section, setSection] = useState<ArtGallerySection>("pinned");
+  const [stageMetrics, setStageMetrics] = useState<StageMetrics>({ height: 480, width: 720 });
+  /** After the first section change, panels use fade/translate instead of the pinned intro spin. */
+  const [sectionTransitionReady, setSectionTransitionReady] = useState(false);
 
   const sortedPieces = useMemo(() => sortArtPiecesByYear(pieces), [pieces]);
   const yearSpans = useMemo(() => artPieceYearSpans(sortedPieces), [sortedPieces]);
 
   const layout = useMemo(
-    () => computeRouletteLayout(sortedPieces, stageH),
-    [sortedPieces, stageH],
+    () => computeRouletteLayout(sortedPieces, stageMetrics),
+    [sortedPieces, stageMetrics],
   );
   const { angleStep, radius, slotH, count } = layout;
 
@@ -441,6 +824,16 @@ export default function ArtGallery({
     [applyWheelTransform, startLoop, updateActiveIndex],
   );
 
+  const handleSectionChange = useCallback(
+    (id: string) => {
+      const next = id as ArtGallerySection;
+      if (next === section) return;
+      setSectionTransitionReady(true);
+      setSection(next);
+    },
+    [section],
+  );
+
   const assignCardRef = useCallback((index: number, el: HTMLDivElement | null) => {
     cardRefs.current[index] = el;
   }, []);
@@ -510,12 +903,18 @@ export default function ArtGallery({
   }, [nudgeRotation, startLoop]);
 
   useEffect(() => {
-    const el = containerRef.current;
+    const el = stageShellRef.current;
     if (!el) return;
 
     const measure = () => {
-      const h = Math.floor(el.getBoundingClientRect().height);
-      if (h > 120) setStageH(h);
+      const rect = el.getBoundingClientRect();
+      const height = Math.floor(rect.height);
+      const width = Math.floor(rect.width);
+      if (height > 120 && width > 80) {
+        setStageMetrics((prev) =>
+          prev.height === height && prev.width === width ? prev : { height, width },
+        );
+      }
     };
 
     measure();
@@ -527,32 +926,35 @@ export default function ArtGallery({
   useEffect(() => stopLoop, [stopLoop]);
 
   useLayoutEffect(() => {
-    if (section !== "other") {
+    if (section === "other") {
+      applyWheelTransform(rotationRef.current);
+    } else {
       draggingRef.current = false;
       velocityRef.current = 0;
       stopLoop();
-      return;
     }
 
-    applyWheelTransform(rotationRef.current);
-    const el = containerRef.current;
+    const el = stageShellRef.current;
     if (!el) return;
-    const h = Math.floor(el.getBoundingClientRect().height);
-    if (h > 120) setStageH(h);
+    const rect = el.getBoundingClientRect();
+    const height = Math.floor(rect.height);
+    const width = Math.floor(rect.width);
+    if (height > 120 && width > 80) {
+      setStageMetrics((prev) =>
+        prev.height === height && prev.width === width ? prev : { height, width },
+      );
+    }
   }, [section, applyWheelTransform, stopLoop]);
 
   const roulette = (
     <div
-      className="relative h-full min-h-0 min-w-0 w-full overflow-hidden"
+      className="absolute inset-0 min-w-0 overflow-hidden"
       style={{
         touchAction: "none",
         "--stage-top-inset": STAGE_TOP_INSET,
+        "--stage-left-inset": STAGE_LEFT_INSET,
         "--pivot-top": PIVOT_TOP_RATIO,
         "--edge-feather": EDGE_FEATHER,
-        WebkitMaskImage:
-          "linear-gradient(to bottom, transparent, black var(--edge-feather), black calc(100% - var(--edge-feather)), transparent)",
-        maskImage:
-          "linear-gradient(to bottom, transparent, black var(--edge-feather), black calc(100% - var(--edge-feather)), transparent)",
       } as React.CSSProperties}
     >
       <ArtScrollTracker
@@ -564,8 +966,13 @@ export default function ArtGallery({
       {/* Roulette stage — pivot left; arc bows right; overflow clips the wheel */}
       <div
         ref={containerRef}
-        className="absolute bottom-0 right-0 left-[clamp(60px,6vw,92px)] cursor-grab overflow-hidden active:cursor-grabbing"
-        style={{ top: STAGE_TOP_INSET }}
+        className="absolute bottom-0 right-0 cursor-grab overflow-hidden active:cursor-grabbing"
+        style={{
+          top: STAGE_TOP_INSET,
+          left: STAGE_LEFT_INSET,
+          WebkitMaskImage: EDGE_FEATHER_MASK,
+          maskImage: EDGE_FEATHER_MASK,
+        }}
         aria-label="Art roulette gallery. Scroll or drag vertically to browse pieces."
         role="region"
         tabIndex={0}
@@ -604,26 +1011,59 @@ export default function ArtGallery({
     </div>
   );
 
+  const stageShellMinH = fillHeight ? STAGE_SHELL_MIN_H_FILL : STAGE_SHELL_MIN_H;
+
   const content = (
     <div
       className={`flex min-w-0 w-full flex-col ${
-        fillHeight ? "min-h-0 flex-1" : "min-h-[clamp(350px,47vh,580px)]"
+        fillHeight ? "min-h-0 flex-1" : ""
       }`}
     >
-      <div
-        className={`min-h-0 flex-1 ${
-          section !== "other" ? "pointer-events-none invisible" : ""
-        }`}
-        aria-hidden={section !== "other"}
-      >
-        {roulette}
+      <div ref={stageShellRef} className={`relative min-h-0 flex-1 ${stageShellMinH}`}>
+        <div
+          className={`art-gallery-panel absolute inset-0 ${
+            section === "other"
+              ? sectionTransitionReady
+                ? "art-gallery-panel--enter"
+                : "art-gallery-panel--shown"
+              : sectionTransitionReady
+                ? "art-gallery-panel--exit"
+                : "art-gallery-panel--idle"
+          }`}
+          aria-hidden={section !== "other"}
+        >
+          {roulette}
+        </div>
+        <div
+          className={`art-gallery-panel absolute inset-0 ${
+            section === "pinned"
+              ? sectionTransitionReady
+                ? "art-gallery-panel--enter"
+                : "art-gallery-panel--shown"
+              : sectionTransitionReady
+                ? "art-gallery-panel--exit"
+                : "art-gallery-panel--idle"
+          }`}
+          aria-hidden={section !== "pinned"}
+        >
+          <PinnedArtCarousel
+            pieces={PINNED_ART_PIECES}
+            stageHeight={stageMetrics.height}
+            stageWidth={stageMetrics.width}
+            active={section === "pinned"}
+          />
+        </div>
       </div>
 
-      <div className="flex shrink-0 items-center justify-center pt-[clamp(10px,1.2vw,16px)]">
+      <div
+        className={`flex shrink-0 items-center justify-center pt-[clamp(10px,1.2vw,16px)] ${
+          fillHeight ? "pb-[5vh]" : "pb-[clamp(16px,2vh,24px)]"
+        }`}
+      >
         <IndexedSelector
           items={ART_GALLERY_SECTIONS}
           value={section}
-          onChange={(id) => setSection(id as ArtGallerySection)}
+          onChange={handleSectionChange}
           ariaLabel="Art gallery section"
           showArrow={false}
         />

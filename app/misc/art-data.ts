@@ -80,11 +80,11 @@ export function artPieceYearSpans(pieces: ArtPiece[]): ArtPieceYearSpan[] {
  */
 export const ART_PIECES: ArtPiece[] = [
   // ── 2023 ──────────────────────────────────────────────────────────────────
-  { file: "img_2077.webp", width: 1274, height: 1600, year: 2023 },
-  { file: "img_2062.webp", width: 1214, height: 1600, year: 2023, displayRotateDeg: 90 },
+  { file: "img_2077.webp", width: 1274, height: 1600, year: 2023, displayRotateDeg: 90 },
+  { file: "img_2062.webp", width: 1214, height: 1600, year: 2023, displayRotateDeg: -90 },
   { file: "img_2063.webp", width: 1294, height: 1600, year: 2023, displayRotateDeg: -90 },
   { file: "img_2064.webp", width: 1188, height: 1600, year: 2023, displayRotateDeg: -90 },
-  { file: "img_2065.webp", width: 1349, height: 1600, year: 2023, displayRotateDeg: 90 },
+  { file: "img_2065.webp", width: 1349, height: 1600, year: 2023, displayRotateDeg: -90 },
   { file: "img_2066.webp", width: 1279, height: 1600, year: 2023, displayRotateDeg: 90 },
   { file: "img_2067.webp", width: 1324, height: 1600, year: 2023 },
   { file: "img_2068.webp", width: 1278, height: 1600, year: 2023, displayRotateDeg: 180 },
@@ -113,7 +113,7 @@ export const ART_PIECES: ArtPiece[] = [
   { file: "img_2045.webp", width: 1600, height: 1561, year: 2019 },
   { file: "img_2046.webp", width: 1335, height: 1600, year: 2019 },
   { file: "img_2048.webp", width: 1200, height: 1600, year: 2019 },
-  { file: "img_2055.webp", width: 1239, height: 1600, year: 2019 },
+  { file: "img_2055.webp", width: 1239, height: 1600, year: 2019, displayRotateDeg: 90 },
 
   // ── 2018 ──────────────────────────────────────────────────────────────────
   { file: "img_2051.webp", width: 1600, height: 1245, year: 2018, displayRotateDeg: 90 },
@@ -129,6 +129,22 @@ export const ART_PIECES: ArtPiece[] = [
  * Group pieces by year. Pieces without a year fall into the trailing
  * "undated" bucket so the gallery can still show everything.
  */
+/** Featured pieces in /public/art/pinned — shown in the gallery pinned carousel. */
+export type PinnedArtPiece = {
+  file: string;
+  width: number;
+  height: number;
+  title?: string;
+};
+
+export const PINNED_ART_PIECES: PinnedArtPiece[] = [
+  { file: "dancer.jpeg", width: 3024, height: 4032, title: "Dancer" },
+  { file: "head statue 1.jpeg", width: 3024, height: 4032, title: "Head statue 1" },
+  { file: "head statue 2.jpeg", width: 3024, height: 4032, title: "Head statue 2" },
+  { file: "vb mannequin.jpeg", width: 3024, height: 4032, title: "VB mannequin" },
+  { file: "winter gear.jpeg", width: 4029, height: 2676, title: "Winter gear" },
+];
+
 export function groupArtByYear(pieces: ArtPiece[]) {
   const dated = new Map<number, ArtPiece[]>();
   const undated: ArtPiece[] = [];

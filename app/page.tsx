@@ -191,7 +191,7 @@ function SectionRenderer() {
           >
             experiences
           </CascadeRevealHeading>
-          <div className="grid w-full grid-cols-2 gap-x-[clamp(24px,3vw,48px)] gap-y-[clamp(24px,3vw,48px)]">
+          <div className="grid w-full grid-cols-1 gap-x-[clamp(24px,3vw,48px)] gap-y-[clamp(24px,3vw,48px)] min-[480px]:grid-cols-2">
             {EXPERIENCE_GRID_ITEMS.map((item, i) => (
               <PortfolioListCard
                 key={item.id}
@@ -211,7 +211,7 @@ function SectionRenderer() {
           >
             projects
           </CascadeRevealHeading>
-          <div className="grid w-full grid-cols-2 gap-x-[clamp(24px,3vw,48px)] gap-y-[clamp(24px,3vw,48px)]">
+          <div className="grid w-full grid-cols-1 gap-x-[clamp(24px,3vw,48px)] gap-y-[clamp(24px,3vw,48px)] min-[480px]:grid-cols-2">
             {PROJECT_GRID_ITEMS.map((item, i) => (
               <PortfolioListCard
                 key={item.id}
@@ -278,7 +278,7 @@ function SectionRenderer() {
 
             {miscTab === "sports" && (
               <div className="flex min-h-[clamp(140px,18vh,180px)] w-full items-center justify-center border border-dashed border-foreground/20">
-                <span className="font-quicksand text-[clamp(12px,0.8vw,14px)] text-foreground/40">Not sure yet</span>
+                <span className="font-quicksand text-[clamp(12px,0.8vw,14px)] text-foreground/40">Stay tuned for highlights...</span>
               </div>
             )}
           </div>

@@ -6,7 +6,7 @@ import HeroNav from "@/components/HeroNav";
 import SocialIcon from "@/components/SocialIcon";
 import HeroAttraction from "@/components/HeroAttraction";
 import { HERO_CASCADE } from "@/lib/heroCascade";
-import { Github, Linkedin, Mail, FileText } from "lucide-react";
+import { Github, Linkedin, Mail } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { HeroNavHoverContext } from "@/components/HeroNavHoverContext";
 
@@ -112,11 +112,6 @@ const SOCIAL_ICONS = [
     label: "email",
     isExternal: false,
     icon: <Mail strokeWidth={1.2} className="size-[clamp(16px,1.1vw,20px)] text-background" />,
-  },
-  {
-    href: "/docs/horst-fang-resume.pdf",
-    label: "resume",
-    icon: <FileText strokeWidth={1.2} className="size-[clamp(16px,1.1vw,20px)] text-background" />,
   },
 ] as const;
 
