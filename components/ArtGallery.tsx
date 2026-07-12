@@ -302,15 +302,17 @@ const PINNED_SIDE_FEATHER_MASK =
 /** Auto-scroll speed for the pinned carousel (px/s). */
 const PINNED_SCROLL_SPEED = 52;
 /** Intro spin peaks here, then eases down to PINNED_SCROLL_SPEED. */
-const PINNED_INTRO_PEAK_SPEED = 1100;
+const PINNED_INTRO_PEAK_SPEED = 1900;
 const PINNED_INTRO_DURATION_MS = 2000;
 const PINNED_WHEEL_SENSITIVITY = 0.9;
 const PINNED_DRAG_SENSITIVITY = 1.05;
 const PINNED_MOMENTUM_GAIN = 0.38;
 const PINNED_VELOCITY_DAMPING = 0.93;
 const PINNED_VELOCITY_CUTOFF = 0.45;
+/** Matches `.portfolio-cascade-in` delay: step * 72ms. */
+const CASCADE_STEP_MS = 72;
 
-/** Smooth ease-out: fast start, long soft landing. */
+/** Smooth ease-out: fast start, long soft landing (original intro curve). */
 function introEaseOut(t: number) {
   const x = Math.min(Math.max(t, 0), 1);
   return 1 - (1 - x) ** 4;
@@ -367,6 +369,15 @@ function applyPinnedTrackTransform(track: HTMLDivElement | null, offset: number)
   track.style.transform = `translate3d(${offset}px, 0, 0)`;
 }
 
+function applyPinnedContentOpacity(track: HTMLDivElement | null, opacity: number) {
+  if (!track) return;
+  track.style.opacity = String(opacity);
+}
+
+function pinnedIntroFade(elapsedMs: number) {
+  return introEaseOut(elapsedMs / PINNED_INTRO_DURATION_MS);
+}
+
 const PinnedCarouselItem = memo(function PinnedCarouselItem({
   piece,
   stageHeight,
@@ -404,11 +415,14 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
   stageHeight,
   stageWidth,
   active,
+  introEnabled,
 }: {
   pieces: PinnedArtPiece[];
   stageHeight: number;
   stageWidth: number;
   active: boolean;
+  /** False while CascadeIn is still opacity-0 / delaying — intro waits for this. */
+  introEnabled: boolean;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
@@ -421,6 +435,8 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
   const lastPointerXRef = useRef(0);
   const introPlayedRef = useRef(false);
   const introStartRef = useRef<number | null>(null);
+  const introEnabledRef = useRef(introEnabled);
+  introEnabledRef.current = introEnabled;
 
   const segmentWidth = useMemo(
     () => pinnedSegmentWidth(pieces, stageHeight, stageWidth),
@@ -434,6 +450,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
 
   const nudgeOffset = useCallback((deltaPx: number, withMomentum = true) => {
     introPlayedRef.current = true;
+    applyPinnedContentOpacity(trackRef.current, 1);
     offsetRef.current = wrapPinnedOffset(
       offsetRef.current + deltaPx,
       segmentWidthRef.current,
@@ -450,6 +467,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
       autoScrollRef.current = !mq.matches;
       if (mq.matches) {
         introPlayedRef.current = true;
+        applyPinnedContentOpacity(trackRef.current, 1);
       }
     };
     sync();
@@ -488,6 +506,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
     const onPointerDown = (event: PointerEvent) => {
       draggingRef.current = true;
       introPlayedRef.current = true;
+      applyPinnedContentOpacity(trackRef.current, 1);
       lastPointerXRef.current = event.clientX;
       velocityRef.current = 0;
       el.setPointerCapture(event.pointerId);
@@ -550,14 +569,22 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
             let speed = PINNED_SCROLL_SPEED;
 
             if (!introPlayedRef.current) {
-              if (introStartRef.current === null) {
-                introStartRef.current = now;
-              }
-              const elapsed = now - introStartRef.current;
-              if (elapsed < PINNED_INTRO_DURATION_MS) {
-                speed = pinnedIntroSpeed(elapsed);
+              // Wait until CascadeIn has applied its entrance (see introEnabled).
+              if (!introEnabledRef.current) {
+                speed = 0;
+                applyPinnedContentOpacity(trackRef.current, 0);
               } else {
-                introPlayedRef.current = true;
+                if (introStartRef.current === null) {
+                  introStartRef.current = now;
+                }
+                const elapsed = now - introStartRef.current;
+                if (elapsed < PINNED_INTRO_DURATION_MS) {
+                  speed = pinnedIntroSpeed(elapsed);
+                  applyPinnedContentOpacity(trackRef.current, pinnedIntroFade(elapsed));
+                } else {
+                  introPlayedRef.current = true;
+                  applyPinnedContentOpacity(trackRef.current, 1);
+                }
               }
             }
 
@@ -609,7 +636,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
       <div
         ref={trackRef}
         className="flex h-full items-center will-change-transform"
-        style={{ gap: PINNED_GAP }}
+        style={{ gap: PINNED_GAP, opacity: 0 }}
       >
         {loopPieces.map((piece, i) => (
           <PinnedCarouselItem
@@ -734,6 +761,17 @@ export default function ArtGallery({
   const [stageMetrics, setStageMetrics] = useState<StageMetrics>({ height: 480, width: 720 });
   /** After the first section change, panels use fade/translate instead of the pinned intro spin. */
   const [sectionTransitionReady, setSectionTransitionReady] = useState(false);
+  /** CascadeIn holds opacity-0 until images settle — arm intro when the entrance actually starts. */
+  const [pinnedIntroEnabled, setPinnedIntroEnabled] = useState(!cascade);
+  const introArmTimeoutRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (introArmTimeoutRef.current !== null) {
+        window.clearTimeout(introArmTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const sortedPieces = useMemo(() => sortArtPiecesByYear(pieces), [pieces]);
   const yearSpans = useMemo(() => artPieceYearSpans(sortedPieces), [sortedPieces]);
@@ -855,7 +893,7 @@ export default function ArtGallery({
 
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      nudgeRotation(event.deltaY * WHEEL_SENSITIVITY);
+      nudgeRotation(-event.deltaY * WHEEL_SENSITIVITY);
     };
 
     el.addEventListener("wheel", onWheel, { passive: false });
@@ -1051,6 +1089,7 @@ export default function ArtGallery({
             stageHeight={stageMetrics.height}
             stageWidth={stageMetrics.width}
             active={section === "pinned"}
+            introEnabled={pinnedIntroEnabled}
           />
         </div>
       </div>
@@ -1076,6 +1115,16 @@ export default function ArtGallery({
       <CascadeIn
         step={cascadeBaseStep}
         className={`min-w-0 w-full ${fillHeight ? "flex min-h-0 flex-1 flex-col" : ""}`}
+        onReady={() => {
+          // Arm intro when the cascade fade begins (after step delay), not while opacity-0.
+          if (introArmTimeoutRef.current !== null) {
+            window.clearTimeout(introArmTimeoutRef.current);
+          }
+          introArmTimeoutRef.current = window.setTimeout(
+            () => setPinnedIntroEnabled(true),
+            cascadeBaseStep * CASCADE_STEP_MS,
+          );
+        }}
       >
         {content}
       </CascadeIn>

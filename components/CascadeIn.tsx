@@ -49,20 +49,31 @@ type CascadeInProps = {
   className?: string;
   style?: CSSProperties;
   children: ReactNode;
+  /** Fires once the cascade class is applied (images settled or fallback). */
+  onReady?: () => void;
 };
 
 /** Applies portfolio-cascade-in only after descendant images have loaded. */
-export default function CascadeIn({ step, className, style, children }: CascadeInProps) {
+export default function CascadeIn({ step, className, style, children, onReady }: CascadeInProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
+  const onReadyRef = useRef(onReady);
+  onReadyRef.current = onReady;
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const fallback = window.setTimeout(() => setReady(true), 900);
+    let settled = false;
+    const markReady = () => {
+      if (settled) return;
+      settled = true;
+      setReady(true);
+      onReadyRef.current?.();
+    };
+    const fallback = window.setTimeout(markReady, 900);
     const cleanup = waitForImages(el, () => {
       window.clearTimeout(fallback);
-      setReady(true);
+      markReady();
     });
     return () => {
       window.clearTimeout(fallback);
