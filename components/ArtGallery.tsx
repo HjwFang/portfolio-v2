@@ -112,7 +112,7 @@ function scrollTrackerRipple(index: number, focus: number, count: number) {
   const dist = continuousIndexDistance(focus, index, count);
   const wave = Math.exp(-dist * TRACK_RIPPLE_DECAY);
   return {
-    opacity: 0.4 + wave * 0.3,
+    opacity: 0.78 + wave * 0.22,
     /** 0 → short tick; 1 → full tracker bar width (see TRACK_BAR_WIDTH). */
     scaleX: 0.22 + wave * 0.48,
     wave,
@@ -262,7 +262,7 @@ const ArtScrollTracker = memo(function ArtScrollTracker({
         {yearSpans.map(({ year, start, end }) => (
           <span
             key={`${year}-${start}`}
-            className="absolute left-0 -translate-y-1/2 text-right font-quicksand font-light tabular-nums text-[clamp(10px,2.4vw,11px)] leading-[1.15] tracking-tight text-foreground whitespace-nowrap"
+            className="absolute left-0 -translate-y-1/2 text-right font-general font-light tabular-nums text-[clamp(13px,3.2vw,15px)] leading-[1.15] tracking-tight text-foreground whitespace-nowrap"
             style={{ top: `${yearTopPct(start, end)}%`, width: TRACK_YEAR_WIDTH }}
           >
             {year}
@@ -279,7 +279,7 @@ const ArtScrollTracker = memo(function ArtScrollTracker({
             <span
               key={p.file}
               ref={(el) => assignUnderscoreRef(i, el)}
-              className="absolute block origin-left -translate-y-1/2 will-change-[opacity,transform] h-px bg-foreground"
+              className="absolute block origin-left -translate-y-1/2 will-change-[opacity,transform] h-[0.5px] bg-foreground"
               style={{
                 top: `${trackTopPct(i, count)}%`,
                 left: TRACK_BAR_LEFT,
@@ -693,6 +693,9 @@ const ArtGalleryCard = memo(function ArtGalleryCard({
               src={`/art/cleaned/thumb/${piece.file}`}
               alt={piece.title ?? "Art piece"}
               fill
+              // Thumbnails are already small, pre-optimized WebPs — skip the on-demand
+              // optimizer so they render instantly and share the preload cache entry.
+              unoptimized
               sizes={`${w}px`}
               className="object-contain"
               placeholder="blur"
@@ -724,8 +727,8 @@ type Props = {
   fillHeight?: boolean;
 };
 
-const WHEEL_SENSITIVITY = 0.034;
-const DRAG_SENSITIVITY = 0.17;
+const WHEEL_SENSITIVITY = 0.012;
+const DRAG_SENSITIVITY = 0.06;
 const SNAP_STRENGTH = 0.082;
 const VELOCITY_DAMPING = 0.938;
 const VELOCITY_CUTOFF = 0.011;
@@ -757,6 +760,8 @@ export default function ArtGallery({
   });
 
   const [activeIndex, setActiveIndex] = useState(0);
+  /** Once true, every wheel card renders its image so the roulette is fully populated on first open. */
+  const [hydrateAllImages, setHydrateAllImages] = useState(false);
   const [section, setSection] = useState<ArtGallerySection>("pinned");
   const [stageMetrics, setStageMetrics] = useState<StageMetrics>({ height: 480, width: 720 });
   /** After the first section change, panels use fade/translate instead of the pinned intro spin. */
@@ -775,6 +780,43 @@ export default function ArtGallery({
 
   const sortedPieces = useMemo(() => sortArtPiecesByYear(pieces), [pieces]);
   const yearSpans = useMemo(() => artPieceYearSpans(sortedPieces), [sortedPieces]);
+
+  // Warm the browser cache with every thumbnail during idle time, then hydrate all
+  // wheel cards. By the time the user opens the "other" section, the roulette is fully
+  // populated instead of popping in card-by-card as it spins.
+  useEffect(() => {
+    if (sortedPieces.length === 0) return;
+    let cancelled = false;
+
+    const preload = () => {
+      if (cancelled) return;
+      for (const piece of sortedPieces) {
+        const img = new window.Image();
+        img.decoding = "async";
+        img.src = `/art/cleaned/thumb/${piece.file}`;
+      }
+      setHydrateAllImages(true);
+    };
+
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    let idleId: number | undefined;
+    let timeoutId: number | undefined;
+    if (typeof w.requestIdleCallback === "function") {
+      idleId = w.requestIdleCallback(preload, { timeout: 1500 });
+    } else {
+      timeoutId = window.setTimeout(preload, 300);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== undefined) w.cancelIdleCallback?.(idleId);
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId);
+    };
+  }, [sortedPieces]);
 
   const layout = useMemo(
     () => computeRouletteLayout(sortedPieces, stageMetrics),
@@ -1032,7 +1074,7 @@ export default function ArtGallery({
             if (indexDistance(i, activeIndex, count) <= IMAGE_LOAD_RADIUS) {
               loadedImageIndicesRef.current.add(i);
             }
-            const loadImage = loadedImageIndicesRef.current.has(i);
+            const loadImage = hydrateAllImages || loadedImageIndicesRef.current.has(i);
             return (
               <ArtGalleryCard
                 key={p.file}
