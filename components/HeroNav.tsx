@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 import { readHomeNavigationFromUrl, writeSectionToUrl } from "@/lib/homeNavigation";
+import { useSwipeSound } from "@/lib/useSwipeSound";
 
 const ITEMS = [
   { num: "01", label: "experiences" },
@@ -34,7 +35,7 @@ export default function HeroNav() {
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const [slideRect, setSlideRect] = useState<{ top: number; height: number } | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
-  const swipeAudioRef = useRef<HTMLAudioElement | null>(null);
+  const playSwipe = useSwipeSound();
   const isFirstRender = useRef(true);
   const hasRestoredFromUrl = useRef(false);
 
@@ -47,20 +48,12 @@ export default function HeroNav() {
   }, [setContextHoveredIndex]);
 
   useEffect(() => {
-    swipeAudioRef.current = new Audio("/sounds/driken5482-swipe-236674.mp3");
-    swipeAudioRef.current.volume = 0.4;
-  }, []);
-
-  useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
     }
-    if (swipeAudioRef.current) {
-      swipeAudioRef.current.currentTime = 0;
-      swipeAudioRef.current.play().catch(() => {});
-    }
-  }, [selectedIndex]);
+    playSwipe();
+  }, [selectedIndex, playSwipe]);
 
   useLayoutEffect(() => {
     const list = listRef.current;

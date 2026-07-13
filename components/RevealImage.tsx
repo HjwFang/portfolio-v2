@@ -112,6 +112,7 @@ export default function RevealImage({
         fill={fill}
         priority={priority}
         loading={priority ? "eager" : "lazy"}
+        draggable={false}
         className={imageClass}
         style={imageStyle}
         onLoad={(e) => {

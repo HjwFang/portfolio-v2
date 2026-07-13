@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
+import { useSwipeSound } from "@/lib/useSwipeSound";
 
 type SelectorItem = {
   id: string;
@@ -35,6 +36,12 @@ export default function IndexedSelector({
     height: number;
   } | null>(null);
   const [hoveredIndex, setHoveredIndex] = useState(-1);
+  const playSwipe = useSwipeSound();
+
+  const handleSelect = (id: string) => {
+    if (id !== value) playSwipe();
+    onChange(id);
+  };
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -128,7 +135,7 @@ export default function IndexedSelector({
                   }}
                   type="button"
                   aria-pressed={isActive}
-                  onClick={() => onChange(item.id)}
+                  onClick={() => handleSelect(item.id)}
                   onMouseEnter={() => setHoveredIndex(index)}
                   onMouseLeave={() => setHoveredIndex(-1)}
                   onFocus={() => setHoveredIndex(index)}
