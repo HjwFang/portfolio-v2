@@ -15,7 +15,7 @@ export type PortfolioListCardCascade = {
 
 type PortfolioListCardProps = {
   item: PortfolioCardItem;
-  /** Omit for non-navigating cards (e.g. experiences shown only in the home SPA). */
+  /** When set, only the image is clickable (text stays plain). External URLs open in a new tab. */
   href?: string;
   priority?: boolean;
   /** When false, hides the subtitle line (e.g. role) between title and description. */
@@ -28,7 +28,7 @@ type PortfolioListCardProps = {
 };
 
 const cardClassName =
-  "group flex w-full flex-col gap-[clamp(4px,0.4vw,8px)] text-left no-underline";
+  "flex w-full flex-col gap-[clamp(4px,0.4vw,8px)] text-left";
 
 export default function PortfolioListCard({
   item,
@@ -51,12 +51,16 @@ export default function PortfolioListCard({
     item.id === "watsapp" ||
     item.id === "unicook";
   const isAtaraxiaCard = item.id === "ataraxia";
+  const isAtrxCard = item.id === "atrx";
   const isQuickposCard = item.id === "quickpos";
   const isTsacCard = item.id === "trudeau-sac";
   const isUnicookCard = item.id === "unicook";
+  const isExternal = href != null && /^https?:\/\//.test(href);
 
-  const imageBoxClassName = `relative flex w-full aspect-4/2.5 overflow-hidden border border-foreground/10 transition-colors duration-200 group-hover:border-foreground/20 ${
-    isAtaraxiaCard
+  const imageBoxClassName = `relative flex w-full aspect-4/2.5 overflow-hidden border border-foreground/10 ${
+    href != null ? "portfolio-card-image-link hover:border-foreground/20" : ""
+  } ${
+    isAtaraxiaCard || isAtrxCard
       ? "items-center justify-center bg-[#FFFFFF]"
       : isCompactCardImage
         ? "items-center justify-center bg-[#FFFFFF] p-[clamp(8px,1.4vw,16px)]"
@@ -117,7 +121,7 @@ export default function PortfolioListCard({
               placeholder="empty"
             />
           </div>
-        ) : isAtaraxiaCard ? (
+        ) : isAtaraxiaCard || isAtrxCard ? (
           <div className="relative h-[min(46%,8.75rem)] w-[min(46%,9.5rem)] max-h-[58%] max-w-[62%] sm:h-[min(48%,9.25rem)] sm:w-[min(48%,10rem)]">
             <RevealImage
               src={image}
@@ -145,14 +149,28 @@ export default function PortfolioListCard({
     </>
   );
 
+  const imageSection =
+    href != null ? (
+      <Link
+        href={href}
+        className="block w-full no-underline"
+        aria-label={`Open ${title}`}
+        {...(isExternal
+          ? { target: "_blank", rel: "noopener noreferrer" }
+          : {})}
+      >
+        <div className={imageBoxClassName}>{imageBox}</div>
+      </Link>
+    ) : (
+      <div className={imageBoxClassName}>{imageBox}</div>
+    );
+
   const body = (
     <>
       {cascade ? (
-        <CascadeIn step={cascade.baseStep} className={imageBoxClassName}>
-          {imageBox}
-        </CascadeIn>
+        <CascadeIn step={cascade.baseStep}>{imageSection}</CascadeIn>
       ) : (
-        <div className={imageBoxClassName}>{imageBox}</div>
+        imageSection
       )}
 
       <div
@@ -181,14 +199,6 @@ export default function PortfolioListCard({
       </div>
     </>
   );
-
-  if (href != null) {
-    return (
-      <Link href={href} className={cardClassName}>
-        {body}
-      </Link>
-    );
-  }
 
   return <div className={cardClassName}>{body}</div>;
 }

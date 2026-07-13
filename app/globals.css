@@ -97,6 +97,21 @@ body::-webkit-scrollbar {
   animation-delay: calc(var(--cascade-step, 0) * 72ms);
 }
 
+.portfolio-card-image-link {
+  transform: translate3d(0, 0, 0);
+  transition:
+    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .portfolio-card-image-link:hover,
+  a:hover .portfolio-card-image-link {
+    transform: translate3d(0, -6px, 0);
+  }
+}
+
 @keyframes art-gallery-panel-in {
   from {
     opacity: 0;
@@ -146,6 +161,15 @@ body::-webkit-scrollbar {
   .portfolio-cascade-in {
     animation: none !important;
     opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .portfolio-card-image-link {
+    transition: none !important;
+  }
+
+  .portfolio-card-image-link:hover,
+  a:hover .portfolio-card-image-link {
     transform: none !important;
   }
 

@@ -196,6 +196,7 @@ function SectionRenderer() {
               <PortfolioListCard
                 key={item.id}
                 item={item}
+                href={item.externalUrl ?? `/experience/${item.id}`}
                 priority={i === 0}
                 cascade={{ baseStep: portfolioCardCascadeStep(i) }}
               />
@@ -216,7 +217,7 @@ function SectionRenderer() {
               <PortfolioListCard
                 key={item.id}
                 item={item}
-                href={`/projects/${item.id}`}
+                href={item.externalUrl ?? `/projects/${item.id}`}
                 priority={i === 0}
                 showSubtitle={false}
                 cascade={{ baseStep: portfolioCardCascadeStep(i) }}

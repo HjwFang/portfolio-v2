@@ -75,7 +75,7 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
           </div>
         </div>
 
-        <main className="flex min-h-[50vh] flex-1 flex-col justify-start px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] pt-[clamp(32px,5vh,48px)] lg:min-h-screen lg:pb-0 lg:pt-[10vh] z-10">
+        <main className="flex min-h-[50vh] flex-1 flex-col justify-start px-[clamp(24px,4.635vw,89px)] pb-[5vh] pt-[clamp(32px,5vh,48px)] lg:min-h-screen lg:pt-[10vh] z-10">
           {children}
         </main>
 

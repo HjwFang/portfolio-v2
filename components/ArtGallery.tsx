@@ -1096,7 +1096,7 @@ export default function ArtGallery({
 
       <div
         className={`flex shrink-0 items-center justify-center pt-[clamp(10px,1.2vw,16px)] ${
-          fillHeight ? "pb-[5vh]" : "pb-[clamp(16px,2vh,24px)]"
+          fillHeight ? "pb-0" : "pb-[clamp(16px,2vh,24px)]"
         }`}
       >
         <IndexedSelector

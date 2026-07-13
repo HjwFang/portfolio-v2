@@ -5,6 +5,8 @@ export type PortfolioCardItem = {
   subtitle: string;
   description: string;
   image: string;
+  /** When set, the card links here in a new tab instead of the project detail page. */
+  externalUrl?: string;
 };
 
 export type PortfolioDetail = {
@@ -31,6 +33,9 @@ export const PROJECT_WATSAPP_IMAGE_SRC = "/images/projects/watsapp.png" as const
 
 /** UniCook project card + detail hero (wordmark on white). */
 export const PROJECT_UNICOOK_LOGO_SRC = "/images/projects/unicook-logo.png" as const;
+
+/** atrx.ca project card (logo on white). */
+export const PROJECT_ATRX_IMAGE_SRC = "/images/projects/atrx.png" as const;
 
 export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {
@@ -80,6 +85,16 @@ export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
     description:
       "Cooking competition platform for university students: match flow, ELO rankings, and clearer journeys across cook, submit, and rank.",
     image: PROJECT_UNICOOK_LOGO_SRC,
+  },
+  {
+    id: "atrx",
+    title: "atrx.ca",
+    date: "May 2026",
+    subtitle: "E-commerce & Brand",
+    description:
+      "Streetwear brand storefront and visual identity—Shopify-powered commerce with a calm, minimal shopping experience.",
+    image: PROJECT_ATRX_IMAGE_SRC,
+    externalUrl: "https://atrx.ca",
   },
 ];
 
