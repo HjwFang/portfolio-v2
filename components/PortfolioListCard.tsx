@@ -155,6 +155,7 @@ export default function PortfolioListCard({
         href={href}
         className="block w-full no-underline"
         aria-label={`Open ${title}`}
+        data-portfolio-open
         {...(isExternal
           ? { target: "_blank", rel: "noopener noreferrer" }
           : {})}

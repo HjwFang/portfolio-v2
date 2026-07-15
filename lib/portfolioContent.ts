@@ -55,6 +55,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     description:
       "Founded and led a streetwear brand, owning visual identity and product presentation while growing the audience through social and community touchpoints.",
     image: EXPERIENCE_ATARAXIA_IMAGE_SRC,
+    externalUrl: "https://atrx.ca",
   },
   {
     id: "trudeau-sac",

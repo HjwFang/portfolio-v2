@@ -94,7 +94,7 @@ const SOCIAL_ICONS = [
     icon: <Github strokeWidth={1.2} className="size-[clamp(16px,1.1vw,20px)] text-background" />,
   },
   {
-    href: "https://www.linkedin.com/in/horse-fang/",
+    href: "https://www.linkedin.com/in/horst-fang/",
     label: "linkedin",
     icon: <Linkedin strokeWidth={1.2} className="size-[clamp(16px,1.1vw,20px)] text-background" />,
   },

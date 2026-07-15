@@ -18,6 +18,7 @@ export default function SocialIcon({ href, icon, disabled, tooltip, isExternal =
             href={disabled ? "#" : href}
             target={disabled ? undefined : (isExternal ? "_blank" : undefined)}
             rel={isExternal && !disabled ? "noopener noreferrer" : undefined}
+            {...(disabled ? {} : { "data-portfolio-open": "" })}
             className={`group block transition-all duration-300 ${disabled ? 'cursor-not-allowed opacity-50' : 'active:scale-95'}`}
             onMouseEnter={label && onHover ? (e) => onHover(label, e) : undefined}
             onMouseMove={label && onHover ? (e) => onHover(label, e) : undefined}
