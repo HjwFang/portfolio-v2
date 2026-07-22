@@ -65,6 +65,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     description:
       "Directed publicity and digital presence for the student body—campaigns, content rhythm, and channels that kept engagement high across the academic year.",
     image: EXPERIENCE_TSAC_LOGO_SRC,
+    externalUrl: "https://www.tsac.ca/",
   },
 ];
 
