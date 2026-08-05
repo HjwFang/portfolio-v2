@@ -143,6 +143,31 @@ body::-webkit-scrollbar {
 }
 
 /*
+ * Sidebar attraction: fill leftover column height on tablet/desktop without
+ * overflowing past the social icons. Size = min(column width, available height).
+ */
+@media (min-width: 768px) {
+  .hero-attraction-slot {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    container-type: size;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .hero-attraction-frame {
+    box-sizing: border-box;
+    width: min(100cqw, 100cqh);
+    height: min(100cqw, 100cqh);
+    max-width: 100%;
+    max-height: 100%;
+    aspect-ratio: 1;
+  }
+}
+
+/*
  * Tracklist scale is relative to the attraction box (container queries),
  * so type/spacing/art keep the same proportions at every screen size.
  * cqmin = min(cqw, cqh) — stays balanced in both wide and short boxes.

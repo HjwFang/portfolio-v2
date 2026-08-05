@@ -16,18 +16,6 @@ type Track = {
 };
 
 const MIN_PLAY_MS = 30_000;
-const PROMOTED_KEY = "np-promoted";
-const PROMOTED_MAX = 10;
-
-function readPromoted(): Track[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(PROMOTED_KEY);
-    return raw ? (JSON.parse(raw) as Track[]) : [];
-  } catch {
-    return [];
-  }
-}
 
 const WAVE_HEIGHTS = [
   40, 70, 100, 55, 85, 45, 95, 60, 30, 75, 100, 50, 80, 40, 65, 90, 55, 35,
@@ -306,11 +294,7 @@ function NowPlayingSkeleton() {
 
 export function NowPlaying() {
   const [data, setData] = useState<{ nowPlaying: Track | null; recent: Track[] } | null>(null);
-  // Songs promoted into "recently played" locally, so a track that just
-  // finished shows up immediately instead of waiting on Spotify's lagging API.
-  // Persisted to localStorage so it survives reloads.
-  const [promoted, setPromoted] = useState<Track[]>(readPromoted);
-  // Latest observed state of the live song (id + how long it has been playing).
+  // Latest observed live song — used only to detect transitions for FLIP.
   const liveRef = useRef<Track | null>(null);
 
   // Root element used to scope FLIP measurements to this widget's rows.
@@ -324,12 +308,13 @@ export function NowPlaying() {
   const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
+    // Drop legacy per-browser promotions so every device shows the server list.
     try {
-      window.localStorage.setItem(PROMOTED_KEY, JSON.stringify(promoted));
+      window.localStorage.removeItem("np-promoted");
     } catch {
-      /* ignore quota/serialization errors */
+      /* ignore */
     }
-  }, [promoted]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -348,17 +333,10 @@ export function NowPlaying() {
 
           const now = d?.nowPlaying ?? null;
           const prev = liveRef.current;
-          // The live song switched away (stopped or changed). If it had racked
-          // up at least 30s of play, move it into recently played.
-          if (prev && prev.id !== now?.id) {
-            if ((prev.progressMs ?? 0) >= MIN_PLAY_MS) {
-              // Mark this track so the next FLIP pass gives it the fade-through
-              // travel from the now-playing slot down into recently played.
-              promotedIdRef.current = prev.id;
-              setPromoted((p) =>
-                [prev, ...p.filter((t) => t.id !== prev.id)].slice(0, PROMOTED_MAX)
-              );
-            }
+          // Song left now-playing after enough play — animate the drop into recent.
+          // The server already prepends it to `recent`; we only mark the FLIP id.
+          if (prev && prev.id !== now?.id && (prev.progressMs ?? 0) >= MIN_PLAY_MS) {
+            promotedIdRef.current = prev.id;
           }
           liveRef.current = now;
         })
@@ -457,12 +435,7 @@ export function NowPlaying() {
 
   if (!data) return <NowPlayingSkeleton />;
 
-  // Local promotions sit ahead of Spotify's recently-played, deduped by id.
-  const recent = [
-    ...promoted,
-    ...data.recent.filter((t) => !promoted.some((p) => p.id === t.id)),
-  ];
-
+  const recent = data.recent;
   const featured = data.nowPlaying ?? recent[0] ?? null;
   const rest = recent.filter((t) => t.id !== featured?.id);
   const tracklist = rest.slice(0, 3);

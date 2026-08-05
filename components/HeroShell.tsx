@@ -12,6 +12,10 @@ import { HeroNavHoverContext } from "@/components/HeroNavHoverContext";
 
 /** Stacked / scale-to-fill brand only below this — tablet+ keeps desktop sidebar width. */
 const SIDEBAR_DESKTOP_QUERY = "(min-width: 768px)";
+/** Keep the scaled title a few px inside the column so glyphs aren't flush/clipped. */
+const BRAND_SCALE_INSET_PX = 6;
+/** Extra slot height after scale — covers descenders + subpixel rounding. */
+const BRAND_HEIGHT_PAD_PX = 8;
 
 /** Talisman + name/school. On mobile, desktop proportions are scaled to fill the content width. */
 function BrandLockup() {
@@ -39,9 +43,9 @@ function BrandLockup() {
       const available = frame.clientWidth;
       if (naturalW <= 0 || available <= 0) return;
 
-      const next = available / naturalW;
+      const next = Math.min(1, (available - BRAND_SCALE_INSET_PX) / naturalW);
       setScale(next);
-      setSlotHeight(naturalH * next);
+      setSlotHeight(Math.ceil(naturalH * next) + BRAND_HEIGHT_PAD_PX);
     };
 
     sync();
@@ -70,15 +74,15 @@ function BrandLockup() {
           <CrossingCornerBorder
             bleed="clamp(3px, 0.3125vw, 6px)"
             thickness="clamp(1px, 0.052vw, 1.5px)"
-            className="bg-foreground content-stretch flex shrink-0 items-center justify-center p-[8px] md:p-[clamp(4px,0.416vw,8px)]"
+            className="bg-foreground content-stretch flex shrink-0 items-center justify-center p-[8px] md:p-[clamp(4px,min(0.416vw,0.7vh),8px)]"
           >
             <div className="relative">
-              <div className="flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground [-webkit-text-stroke:2px_var(--color-background)] md:text-[clamp(24px,2.2vw,42px)]">
+              <div className="flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground [-webkit-text-stroke:2px_var(--color-background)] md:text-[clamp(22px,min(2.2vw,3.6vh),42px)]">
                 <span className="mb-0">方</span>
                 <span className="mb-0">建</span>
                 <span>为</span>
               </div>
-              <div className="absolute inset-0 flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground md:text-[clamp(24px,2.2vw,42px)]">
+              <div className="absolute inset-0 flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground md:text-[clamp(22px,min(2.2vw,3.6vh),42px)]">
                 <span className="mb-0">方</span>
                 <span className="mb-0">建</span>
                 <span>为</span>
@@ -91,10 +95,10 @@ function BrandLockup() {
           step={HERO_CASCADE.title}
           className="relative flex shrink-0 flex-col items-start"
         >
-          <h1 className="m-0 whitespace-nowrap text-left font-general text-[116px] font-medium leading-[normal] -tracking-widest text-foreground md:text-[clamp(44px,6vw,116px)]">
+          <h1 className="m-0 whitespace-nowrap text-left font-general text-[116px] font-medium leading-none pb-[0.16em] -tracking-widest text-foreground md:text-[clamp(40px,min(6vw,9vh),116px)] md:pb-0 md:leading-[normal]">
             horst fang
           </h1>
-          <div className="ml-[5px] whitespace-nowrap font-quicksand text-[21px] font-light leading-[normal] text-foreground md:ml-[clamp(2px,0.26vw,5px)] md:text-[clamp(14px,1.1vw,21px)]">
+          <div className="ml-[5px] -mt-[0.06em] whitespace-nowrap font-quicksand text-[21px] font-light leading-[normal] text-foreground md:ml-[clamp(2px,0.26vw,5px)] md:mt-0 md:text-[clamp(13px,min(1.1vw,1.8vh),21px)]">
             syde @uwaterloo
           </div>
         </CascadeReveal>
@@ -113,26 +117,32 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
     <HeroNavHoverContext.Provider value={heroNavHoverContextValue}>
       {/* Side-by-side from md up; stacked hero only on mobile (<768). */}
       <div className="flex h-full min-h-screen flex-col md:flex-row">
-        <div className="z-20 flex flex-col justify-between md:sticky md:top-0 md:h-screen md:w-fit">
-          <div className="flex flex-1 flex-col border-x border-b border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] md:border-b-0 md:pb-0">
-            <header className="pt-[7vh] sm:pt-[10vh] md:flex md:min-h-0 md:flex-1 md:flex-col">
-              <div className="flex w-full flex-col items-start md:w-fit md:min-h-0 md:flex-1">
-                <BrandLockup />
+        {/* dvh + min-h-0 keep name/nav/sphere/icons in one viewport on short tablets. */}
+        <div className="z-20 flex min-h-0 flex-col md:sticky md:top-0 md:h-dvh md:max-h-dvh md:w-fit md:overflow-hidden">
+          <div className="flex min-h-0 flex-1 flex-col border-x border-b border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] md:border-b-0 md:pb-0">
+            <header className="flex min-h-0 flex-1 flex-col pt-[clamp(20px,7vh,72px)] sm:pt-[clamp(24px,min(10vh,6vw),96px)] md:pt-[clamp(20px,min(10vh,5vw),96px)]">
+              <div className="flex min-h-0 w-full flex-1 flex-col items-start md:w-fit">
+                <div className="w-full shrink-0 md:w-fit">
+                  <BrandLockup />
+                </div>
 
-                <CascadeReveal step={HERO_CASCADE.nav} className="mt-[clamp(20px,2.6vh,32px)] w-full">
+                <CascadeReveal
+                  step={HERO_CASCADE.nav}
+                  className="mt-[clamp(12px,min(2.6vh,2vw),32px)] w-full shrink-0"
+                >
                   <HeroNav />
                 </CascadeReveal>
 
                 <CascadeReveal
                   step={HERO_CASCADE.attraction}
-                  className="mt-[clamp(28px,4.2vh,48px)] w-full md:flex md:min-h-0 md:flex-1 md:flex-col"
+                  className="mt-[clamp(12px,min(4.2vh,2.5vw),48px)] flex min-h-0 w-full flex-1 flex-col"
                 >
                   <HeroAttraction />
                 </CascadeReveal>
               </div>
             </header>
 
-            <div className="hidden pb-[5vh] md:mt-[clamp(28px,4.2vh,48px)] md:block">
+            <div className="hidden shrink-0 pb-[5vh] md:mt-[clamp(12px,min(4.2vh,2.5vw),48px)] md:block md:pb-[clamp(16px,5vh,48px)]">
               <FooterContent />
             </div>
           </div>
