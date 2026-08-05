@@ -175,11 +175,11 @@ export default function HeroAttraction() {
     }, []);
 
     return (
-        <div className="hero-attraction-slot max-md:flex max-md:w-full max-md:items-center max-md:justify-center">
+        <div className="hero-attraction-slot flex w-full items-center justify-center md:h-full md:min-h-0">
             <CrossingCornerBorder
                 bleed="clamp(3px, 0.3125vw, 6px)"
                 thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="hero-attraction-frame max-md:aspect-auto max-md:h-[clamp(18rem,86vw,22.5rem)] max-md:w-full"
+                className="hero-attraction-frame w-full aspect-square max-md:aspect-auto max-md:h-[clamp(18rem,86vw,22.5rem)] md:aspect-auto md:h-full md:max-h-none"
             >
                 <div
                     className={`w-full h-full flex items-center justify-center relative group overflow-hidden transition-colors duration-300 ${
