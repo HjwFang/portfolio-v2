@@ -7,8 +7,101 @@ import SocialIcon from "@/components/SocialIcon";
 import HeroAttraction from "@/components/HeroAttraction";
 import { HERO_CASCADE } from "@/lib/heroCascade";
 import { Github, Linkedin, Mail } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type MouseEvent } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { HeroNavHoverContext } from "@/components/HeroNavHoverContext";
+
+/** Stacked / scale-to-fill brand only below this — tablet+ keeps desktop sidebar width. */
+const SIDEBAR_DESKTOP_QUERY = "(min-width: 768px)";
+
+/** Talisman + name/school. On mobile, desktop proportions are scaled to fill the content width. */
+function BrandLockup() {
+  const frameRef = useRef<HTMLDivElement>(null);
+  const lockupRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  const [slotHeight, setSlotHeight] = useState<number | undefined>(undefined);
+
+  useLayoutEffect(() => {
+    const frame = frameRef.current;
+    const lockup = lockupRef.current;
+    if (!frame || !lockup) return;
+
+    const sync = () => {
+      const isSidebarDesktop = window.matchMedia(SIDEBAR_DESKTOP_QUERY).matches;
+      if (isSidebarDesktop) {
+        setScale(1);
+        setSlotHeight(undefined);
+        return;
+      }
+
+      // offsetWidth/Height ignore CSS transforms, so this is the unscaled size.
+      const naturalW = lockup.offsetWidth;
+      const naturalH = lockup.offsetHeight;
+      const available = frame.clientWidth;
+      if (naturalW <= 0 || available <= 0) return;
+
+      const next = available / naturalW;
+      setScale(next);
+      setSlotHeight(naturalH * next);
+    };
+
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(frame);
+    void document.fonts?.ready.then(sync);
+    window.addEventListener("resize", sync);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", sync);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={frameRef}
+      className="w-full md:w-fit"
+      style={slotHeight != null ? { height: slotHeight } : undefined}
+    >
+      <div
+        ref={lockupRef}
+        className="content-stretch pointer-events-none inline-flex w-max origin-top-left flex-row items-end justify-start gap-[28px] md:gap-[clamp(18px,1.5vw,28px)]"
+        style={{ transform: scale === 1 ? undefined : `scale(${scale})` }}
+      >
+        <CascadeReveal step={HERO_CASCADE.cjk} className="shrink-0">
+          <CrossingCornerBorder
+            bleed="clamp(3px, 0.3125vw, 6px)"
+            thickness="clamp(1px, 0.052vw, 1.5px)"
+            className="bg-foreground content-stretch flex shrink-0 items-center justify-center p-[8px] md:p-[clamp(4px,0.416vw,8px)]"
+          >
+            <div className="relative">
+              <div className="flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground [-webkit-text-stroke:2px_var(--color-background)] md:text-[clamp(24px,2.2vw,42px)]">
+                <span className="mb-0">方</span>
+                <span className="mb-0">建</span>
+                <span>为</span>
+              </div>
+              <div className="absolute inset-0 flex flex-col items-center whitespace-nowrap font-cjk text-[42px] font-bold leading-none text-foreground md:text-[clamp(24px,2.2vw,42px)]">
+                <span className="mb-0">方</span>
+                <span className="mb-0">建</span>
+                <span>为</span>
+              </div>
+            </div>
+          </CrossingCornerBorder>
+        </CascadeReveal>
+
+        <CascadeReveal
+          step={HERO_CASCADE.title}
+          className="relative flex shrink-0 flex-col items-start"
+        >
+          <h1 className="m-0 whitespace-nowrap text-left font-general text-[116px] font-medium leading-[normal] -tracking-widest text-foreground md:text-[clamp(44px,6vw,116px)]">
+            horst fang
+          </h1>
+          <div className="ml-[5px] whitespace-nowrap font-quicksand text-[21px] font-light leading-[normal] text-foreground md:ml-[clamp(2px,0.26vw,5px)] md:text-[clamp(14px,1.1vw,21px)]">
+            syde @uwaterloo
+          </div>
+        </CascadeReveal>
+      </div>
+    </div>
+  );
+}
 
 export default function HeroShell({ children }: { children?: React.ReactNode }) {
   const [hoveredNavIndex, setHoveredNavIndex] = useState(-1);
@@ -18,46 +111,13 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
   );
   return (
     <HeroNavHoverContext.Provider value={heroNavHoverContextValue}>
-      <div className="flex min-h-screen flex-col lg:flex-row h-full">
-        {/* Sidebar (Desktop) / Header Area (Mobile) */}
-        <div className="flex flex-col lg:w-fit lg:h-screen lg:sticky lg:top-0 justify-between z-20">
-          <div className="flex-1 flex flex-col border-x border-b lg:border-b-0 border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] lg:pb-0">
-            <header className="pt-[7vh] sm:pt-[10vh] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
-              <div className="flex w-full flex-col items-start lg:w-fit lg:min-h-0 lg:flex-1">
-                <div className="content-stretch flex w-fit flex-row items-end justify-start gap-[clamp(18px,1.5vw,28px)] pointer-events-none">
-                  <CascadeReveal step={HERO_CASCADE.cjk} className="shrink-0">
-                    <CrossingCornerBorder
-                      bleed="clamp(3px, 0.3125vw, 6px)"
-                      thickness="clamp(1px, 0.052vw, 1.5px)"
-                      className="bg-foreground content-stretch flex items-center justify-center p-[clamp(4px,0.416vw,8px)] shrink-0"
-                    >
-                      <div className="relative">
-                        <div className="font-cjk font-bold leading-none text-[clamp(24px,2.2vw,42px)] text-foreground [-webkit-text-stroke:2px_var(--color-background)] whitespace-nowrap flex flex-col items-center">
-                          <span className="mb-0">方</span>
-                          <span className="mb-0">建</span>
-                          <span>为</span>
-                        </div>
-                        <div className="absolute inset-0 font-cjk font-bold leading-none text-[clamp(24px,2.2vw,42px)] text-foreground whitespace-nowrap flex flex-col items-center">
-                          <span className="mb-0">方</span>
-                          <span className="mb-0">建</span>
-                          <span>为</span>
-                        </div>
-                      </div>
-                    </CrossingCornerBorder>
-                  </CascadeReveal>
-
-                  <CascadeReveal
-                    step={HERO_CASCADE.title}
-                    className="flex flex-col items-start relative shrink-0"
-                  >
-                    <h1 className="m-0 font-general font-medium leading-[normal] text-foreground text-[clamp(44px,6vw,116px)] tracking-[-0.08em] sm:-tracking-widest whitespace-nowrap text-left">
-                      horst fang
-                    </h1>
-                    <div className="ml-[clamp(2px,0.26vw,5px)] font-quicksand font-light leading-[normal] text-foreground text-[clamp(14px,1.1vw,21px)] whitespace-nowrap">
-                      syde @uwaterloo
-                    </div>
-                  </CascadeReveal>
-                </div>
+      {/* Side-by-side from md up; stacked hero only on mobile (<768). */}
+      <div className="flex h-full min-h-screen flex-col md:flex-row">
+        <div className="z-20 flex flex-col justify-between md:sticky md:top-0 md:h-screen md:w-fit">
+          <div className="flex flex-1 flex-col border-x border-b border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] md:border-b-0 md:pb-0">
+            <header className="pt-[7vh] sm:pt-[10vh] md:flex md:min-h-0 md:flex-1 md:flex-col">
+              <div className="flex w-full flex-col items-start md:w-fit md:min-h-0 md:flex-1">
+                <BrandLockup />
 
                 <CascadeReveal step={HERO_CASCADE.nav} className="mt-[clamp(20px,2.6vh,32px)] w-full">
                   <HeroNav />
@@ -65,24 +125,24 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
 
                 <CascadeReveal
                   step={HERO_CASCADE.attraction}
-                  className="w-full mt-[clamp(28px,4.2vh,48px)] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+                  className="mt-[clamp(28px,4.2vh,48px)] w-full md:flex md:min-h-0 md:flex-1 md:flex-col"
                 >
                   <HeroAttraction />
                 </CascadeReveal>
               </div>
             </header>
 
-            <div className="hidden lg:block pb-[5vh] lg:mt-[clamp(28px,4.2vh,48px)]">
+            <div className="hidden pb-[5vh] md:mt-[clamp(28px,4.2vh,48px)] md:block">
               <FooterContent />
             </div>
           </div>
         </div>
 
-        <main className="flex min-h-[50vh] flex-1 flex-col justify-start px-[clamp(24px,4.635vw,89px)] pb-[5vh] pt-[clamp(32px,5vh,48px)] lg:min-h-screen lg:pt-[10vh] z-10">
+        <main className="z-10 flex min-h-[50vh] flex-1 flex-col justify-start px-[clamp(24px,4.635vw,89px)] pb-[5vh] pt-[clamp(32px,5vh,48px)] md:min-h-screen md:pt-[10vh]">
           {children}
         </main>
 
-        <div className="lg:hidden px-[clamp(24px,4.635vw,89px)] pb-[5vh] pt-[clamp(20px,3vh,28px)]">
+        <div className="px-[clamp(24px,4.635vw,89px)] pb-[5vh] pt-[clamp(20px,3vh,28px)] md:hidden">
           <FooterContent />
         </div>
       </div>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState, useRef } from "react";
 
-const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
+/** Desktop/tablet + fine pointer — hide on mobile widths even in DevTools device mode. */
+const CURSOR_ENABLED_QUERY = "(min-width: 768px) and (hover: hover) and (pointer: fine)";
 
 export default function CustomCursor() {
     const [isEnabled, setIsEnabled] = useState(false);
@@ -13,7 +14,7 @@ export default function CustomCursor() {
     const delayedPos = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
-        const media = window.matchMedia(FINE_POINTER_QUERY);
+        const media = window.matchMedia(CURSOR_ENABLED_QUERY);
         const syncEnabled = () => setIsEnabled(media.matches);
 
         syncEnabled();

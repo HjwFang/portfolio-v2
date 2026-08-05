@@ -11,7 +11,7 @@
   --font-cjk: "Noto Sans SC", "Noto Sans JP", sans-serif;
 }
 
-@media (hover: hover) and (pointer: fine) {
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
   html,
   body,
   * {
@@ -171,14 +171,64 @@ body::-webkit-scrollbar {
   --np-wave-gap: clamp(1.5px, 0.45cqmin, 2.5px);
   --np-bleed: clamp(2px, 0.6cqmin, 5px);
   --np-status: clamp(10px, 2.5cqmin, 13px);
+  --np-feather: clamp(16px, 5cqmin, 36px);
 
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  /* Center when there's room; pin to top + scroll when compressed. */
+  justify-content: flex-start;
+  justify-content: safe center;
   height: 100%;
   min-height: 0;
   padding: var(--np-pad);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--np-feather),
+    #000 calc(100% - var(--np-feather)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--np-feather),
+    #000 calc(100% - var(--np-feather)),
+    transparent 100%
+  );
+}
+
+.now-playing-scale::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Phone: slightly tighter type scale inside the fixed-height frame. */
+@media (max-width: 767px) {
+  .now-playing-scale {
+    --np-pad: clamp(16px, 5.5vw, 28px);
+    --np-gap: clamp(12px, 4vw, 20px);
+    --np-label: clamp(11px, 3.2vw, 14px);
+    --np-title: clamp(13px, 3.6vw, 16px);
+    --np-artist: clamp(11px, 3vw, 13px);
+    --np-meta: clamp(11px, 3vw, 14px);
+    --np-art: clamp(36px, 10vw, 48px);
+    --np-row-pad: clamp(8px, 2.2vw, 12px);
+    --np-row-gap: clamp(8px, 2.4vw, 12px);
+    --np-section-gap: clamp(6px, 1.8vw, 10px);
+    --np-wave-h: clamp(9px, 2.4vw, 12px);
+    --np-wave-w: clamp(1.5px, 0.4vw, 2.5px);
+    --np-wave-gap: clamp(1.5px, 0.45vw, 2.5px);
+    --np-bleed: clamp(2px, 0.6vw, 4px);
+    --np-status: clamp(10px, 2.5vw, 12px);
+    --np-feather: clamp(14px, 4vw, 28px);
+  }
 }
 
 @keyframes now-playing-skeleton {

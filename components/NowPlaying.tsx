@@ -275,7 +275,7 @@ function SkeletonRow({ delay = 0 }: { delay?: number }) {
 function NowPlayingSkeleton() {
   return (
     <div
-      className="flex h-full w-full min-h-0 flex-col justify-center"
+      className="flex w-full min-h-0 flex-col"
       style={{ gap: "var(--np-gap)" }}
       role="status"
       aria-label="Loading tracks"
@@ -337,12 +337,18 @@ export function NowPlaying() {
     let cancelled = false;
     const load = () =>
       fetch("/api/spotify")
-        .then((r) => r.json())
-        .then((d: { nowPlaying: Track | null; recent: Track[] }) => {
-          if (cancelled || !d || !Array.isArray(d.recent)) return;
-          setData(d);
+        .then(async (r) => {
+          let d: { nowPlaying?: Track | null; recent?: Track[] } | null = null;
+          try {
+            d = (await r.json()) as { nowPlaying?: Track | null; recent?: Track[] };
+          } catch {
+            return;
+          }
+          if (cancelled) return;
+          const recent = Array.isArray(d?.recent) ? d.recent : [];
+          setData({ nowPlaying: d?.nowPlaying ?? null, recent });
 
-          const now = d.nowPlaying ?? null;
+          const now = d?.nowPlaying ?? null;
           const prev = liveRef.current;
           // The live song switched away (stopped or changed). If it had racked
           // up at least 30s of play, move it into recently played.
@@ -482,7 +488,7 @@ export function NowPlaying() {
   return (
     <div
       ref={rootRef}
-      className="flex h-full w-full min-h-0 flex-col justify-center"
+      className="flex w-full min-h-0 flex-col"
       style={{ gap: "var(--np-gap)" }}
     >
       <div className="flex flex-col">

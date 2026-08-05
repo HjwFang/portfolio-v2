@@ -25,6 +25,8 @@ export default function HeroAttraction() {
     const [isCanvasReady, setIsCanvasReady] = useState(false);
     const [showNowPlaying, setShowNowPlaying] = useState(false);
     const [tracklistVisible, setTracklistVisible] = useState(false);
+    /** Keep NowPlaying mounted after first open so reopen doesn't reload from scratch. */
+    const [tracklistMounted, setTracklistMounted] = useState(false);
 
     /** Tracks pointer travel so a tap can be told apart from an arcball drag. */
     const tapTrackerRef = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, startTime: 0, travel: 0 });
@@ -35,9 +37,16 @@ export default function HeroAttraction() {
             setTracklistVisible(false);
             return;
         }
+        setTracklistMounted(true);
         const timer = setTimeout(() => setTracklistVisible(true), TRACKLIST_REVEAL_DELAY_MS);
         return () => clearTimeout(timer);
     }, [showNowPlaying]);
+
+    // Warm the Spotify payload while the icosphere is visible so open feels instant.
+    useEffect(() => {
+        if (!isAnyAttractionHovered) return;
+        void fetch("/api/spotify").catch(() => {});
+    }, [isAnyAttractionHovered]);
 
     useEffect(() => {
         if (!isAnyAttractionHovered) {
@@ -270,11 +279,11 @@ export default function HeroAttraction() {
     };
 
     return (
-        <div className="w-full flex items-center justify-center lg:h-full lg:min-h-0">
+        <div className="w-full flex items-center justify-center md:h-full md:min-h-0">
             <CrossingCornerBorder
                 bleed="clamp(3px, 0.3125vw, 6px)"
                 thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="w-full aspect-[5/3] lg:aspect-auto lg:h-full lg:max-h-none"
+                className="hero-attraction-frame w-full aspect-square max-md:aspect-auto max-md:h-[clamp(18rem,86vw,22.5rem)] md:aspect-auto md:h-full md:max-h-none"
             >
                 <div
                     className={`w-full h-full flex items-center justify-center relative group overflow-hidden transition-colors duration-300 ${
@@ -360,7 +369,8 @@ export default function HeroAttraction() {
                                     : "translate-y-2 opacity-0"
                             }`}
                         >
-                            {tracklistVisible ? <NowPlaying /> : null}
+                            {/* Mount as soon as opened (prefetch during zoom); keep mounted after first open. */}
+                            {tracklistMounted || showNowPlaying ? <NowPlaying /> : null}
                         </div>
                     </div>
 
