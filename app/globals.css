@@ -206,27 +206,10 @@ body::-webkit-scrollbar {
 
 /* Featured slot: last played ↔ now playing morph */
 .now-playing-label-swap {
-  display: grid;
-  grid-template-areas: "stack";
+  display: inline-grid;
+  grid-template-columns: max-content;
+  align-items: center;
   justify-items: start;
-}
-
-.now-playing-label-swap > span {
-  grid-area: stack;
-  transition:
-    opacity 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.now-playing-label-swap > span[data-active="false"] {
-  opacity: 0;
-  transform: translate3d(0, 3px, 0);
-  pointer-events: none;
-}
-
-.now-playing-label-swap > span[data-active="true"] {
-  opacity: 1;
-  transform: translate3d(0, 0, 0);
 }
 
 .now-playing-wave-slot {
@@ -297,7 +280,6 @@ body::-webkit-scrollbar {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .now-playing-label-swap > span,
   .now-playing-wave-slot,
   .now-playing-row-shell,
   .now-playing-row-shell .now-playing-row-edge,
@@ -306,7 +288,6 @@ body::-webkit-scrollbar {
     transition: none !important;
   }
 
-  .now-playing-label-swap > span[data-active="false"],
   .now-playing-wave-slot {
     transform: none;
   }

@@ -85,11 +85,33 @@ function SectionHeader({
     >
       {liveSwap ? (
         <span
-          className="now-playing-label-swap font-general font-medium leading-snug text-foreground whitespace-nowrap"
+          className="now-playing-label-swap relative inline-grid font-general font-medium leading-snug text-foreground whitespace-nowrap"
           style={{ fontSize: "var(--np-label)" }}
         >
-          <span data-active={isLive ? "true" : "false"}>now playing</span>
-          <span data-active={isLive ? "false" : "true"}>last played</span>
+          {/* Wider label reserves width so the crossfade doesn't shift the wave. */}
+          <span className="invisible col-start-1 row-start-1" aria-hidden>
+            now playing
+          </span>
+          <span
+            className="col-start-1 row-start-1 transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{
+              opacity: isLive ? 1 : 0,
+              transform: isLive ? "translate3d(0,0,0)" : "translate3d(0,3px,0)",
+              pointerEvents: isLive ? "auto" : "none",
+            }}
+          >
+            now playing
+          </span>
+          <span
+            className="col-start-1 row-start-1 transition-[opacity,transform] duration-[280ms] ease-[cubic-bezier(0.22,1,0.36,1)]"
+            style={{
+              opacity: isLive ? 0 : 1,
+              transform: isLive ? "translate3d(0,3px,0)" : "translate3d(0,0,0)",
+              pointerEvents: isLive ? "none" : "auto",
+            }}
+          >
+            last played
+          </span>
         </span>
       ) : (
         <span
