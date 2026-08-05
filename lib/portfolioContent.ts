@@ -3,7 +3,7 @@ export type PortfolioCardItem = {
   title: string;
   date: string;
   subtitle: string;
-  description: string;
+  description?: string;
   image: string;
   /** When set, the card links here in a new tab instead of the project detail page. */
   externalUrl?: string;
@@ -18,6 +18,9 @@ export type PortfolioDetail = {
   websiteUrl: string;
   imageUrl: string;
 };
+
+/** Grewal Guyatt LLP experience card + detail hero. */
+export const EXPERIENCE_GREWAL_GUYATT_LOGO_SRC = "/images/experience/grewal-guyatt.png" as const;
 
 /** QuickPOS experience card + detail hero. */
 export const EXPERIENCE_QUICKPOS_IMAGE_SRC = "/images/experience/quickpos.png" as const;
@@ -39,13 +42,24 @@ export const PROJECT_ATRX_IMAGE_SRC = "/images/projects/atrx.png" as const;
 
 export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {
+    id: "grewal-guyatt",
+    title: "Grewal Guyatt LLP",
+    date: "Incoming F26",
+    subtitle: "Software Developer",
+    description:
+      "Shipping full-stack products for a growing professional services firm.",
+    image: EXPERIENCE_GREWAL_GUYATT_LOGO_SRC,
+    externalUrl: "https://www.grewalguyatt.ca/",
+  },
+  {
     id: "quickpos",
     title: "QuickPOS Technologies Inc.",
     date: "Jan 2026 – Apr 2026",
     subtitle: "Software Engineer Intern",
     description:
-      "Software engineering for POS-adjacent systems and RAG-enabled B2B tools—building and shipping features alongside the team, with attention to reliability and clarity for merchants and internal operators.",
+      "Built and shipped an AI-powered B2B platform end to end on a small team, from backend and frontend to deployment.",
     image: EXPERIENCE_QUICKPOS_IMAGE_SRC,
+    externalUrl: "https://quickpos.ca/",
   },
   {
     id: "ataraxia",
@@ -53,7 +67,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     date: "May 2025 – Sep 2025",
     subtitle: "Founder",
     description:
-      "Founded and led a streetwear brand, owning visual identity and product presentation while growing the audience through social and community touchpoints.",
+      "Founded a streetwear brand from scratch, reaching 65K+ users and $5K in sales within one month at a 60% gross margin.",
     image: EXPERIENCE_ATARAXIA_IMAGE_SRC,
     externalUrl: "https://atrx.ca",
   },
@@ -63,7 +77,7 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
     date: "May 2024 – Jun 2025",
     subtitle: "Head of Publicity",
     description:
-      "Directed publicity and digital presence for the student body—campaigns, content rhythm, and channels that kept engagement high across the academic year.",
+      "Led a 3-person publicity team to 1M+ views while running weekly events for 1,600+ students and a $37K+ event series.",
     image: EXPERIENCE_TSAC_LOGO_SRC,
     externalUrl: "https://www.tsac.ca/",
   },
@@ -71,12 +85,22 @@ export const EXPERIENCE_GRID_ITEMS: readonly PortfolioCardItem[] = [
 
 export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
   {
+    id: "atrx",
+    title: "atrx.ca",
+    date: "May 2026",
+    subtitle: "E-commerce & Brand",
+    description:
+      "Custom e-commerce storefront for my streetwear brand, built from scratch on Next.js, Supabase, Prisma, and Stripe after migrating off Shopify.",
+    image: PROJECT_ATRX_IMAGE_SRC,
+    externalUrl: "https://atrx.ca",
+  },
+  {
     id: "watsapp",
     title: "WatsApp",
     date: "2025",
     subtitle: "Product & UX",
     description:
-      "Product design for a Waterloo course-community app: onboarding, course chats, study groups, and attachment flows—mobile-first layouts tuned for clarity between classes.",
+      "Real-time messaging app built with React Native and Expo, with Supabase handling auth and live message sync.",
     image: PROJECT_WATSAPP_IMAGE_SRC,
   },
   {
@@ -85,22 +109,22 @@ export const PROJECT_GRID_ITEMS: readonly PortfolioCardItem[] = [
     date: "Nov 2025",
     subtitle: "Product & UX",
     description:
-      "Cooking competition platform for university students: match flow, ELO rankings, and clearer journeys across cook, submit, and rank.",
+      "Designed and prototyped a cooking competition platform with match flow logic, interaction states, and an ELO-based ranking system.",
     image: PROJECT_UNICOOK_LOGO_SRC,
-  },
-  {
-    id: "atrx",
-    title: "atrx.ca",
-    date: "May 2026",
-    subtitle: "E-commerce & Brand",
-    description:
-      "Streetwear brand storefront and visual identity—Shopify-powered commerce with a calm, minimal shopping experience.",
-    image: PROJECT_ATRX_IMAGE_SRC,
-    externalUrl: "https://atrx.ca",
   },
 ];
 
 export const EXPERIENCE_DETAILS: Record<string, PortfolioDetail> = {
+  "grewal-guyatt": {
+    title: "Grewal Guyatt LLP",
+    timeline: "incoming f26",
+    tools: "development, version control, cross-functional collaboration",
+    skills: "software_development, internal_tools, professional_services",
+    overview:
+      "Joining Grewal Guyatt LLP as an incoming Software Developer for Fall 2026. Grewal Guyatt is a chartered professional accounting and advisory firm offering assurance, forensics, taxation, and valuation services—where I'll contribute to internal tools and systems that support the team and its clients.",
+    websiteUrl: "https://www.grewalguyatt.ca/",
+    imageUrl: EXPERIENCE_GREWAL_GUYATT_LOGO_SRC,
+  },
   quickpos: {
     title: "QuickPOS Technologies",
     timeline: "jan 2026 - apr 2026",

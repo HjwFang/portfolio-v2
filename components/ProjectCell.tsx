@@ -4,6 +4,7 @@ import Link from "next/link";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import {
   EXPERIENCE_ATARAXIA_IMAGE_SRC,
+  EXPERIENCE_GREWAL_GUYATT_LOGO_SRC,
   EXPERIENCE_TSAC_LOGO_SRC,
   PROJECT_UNICOOK_LOGO_SRC,
   PROJECT_WATSAPP_IMAGE_SRC,
@@ -33,6 +34,7 @@ export default function ProjectCell({
   const isAtaraxiaHero = imageUrl === EXPERIENCE_ATARAXIA_IMAGE_SRC;
   const isCompactHero =
     imageUrl === EXPERIENCE_TSAC_LOGO_SRC ||
+    imageUrl === EXPERIENCE_GREWAL_GUYATT_LOGO_SRC ||
     imageUrl === PROJECT_WATSAPP_IMAGE_SRC ||
     imageUrl === PROJECT_UNICOOK_LOGO_SRC;
   const isUnicookHero = imageUrl === PROJECT_UNICOOK_LOGO_SRC;

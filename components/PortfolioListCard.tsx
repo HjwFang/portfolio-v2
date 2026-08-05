@@ -48,12 +48,14 @@ export default function PortfolioListCard({
   const cascadeClass = cascade ? "portfolio-cascade-in" : "";
   const isCompactCardImage =
     item.id === "trudeau-sac" ||
+    item.id === "grewal-guyatt" ||
     item.id === "watsapp" ||
     item.id === "unicook";
   const isAtaraxiaCard = item.id === "ataraxia";
   const isAtrxCard = item.id === "atrx";
   const isQuickposCard = item.id === "quickpos";
   const isTsacCard = item.id === "trudeau-sac";
+  const isGrewalCard = item.id === "grewal-guyatt";
   const isUnicookCard = item.id === "unicook";
   const isExternal = href != null && /^https?:\/\//.test(href);
 
@@ -89,7 +91,9 @@ export default function PortfolioListCard({
               className={
                 isTsacCard
                   ? "relative h-[min(28%,5.5rem)] w-[min(22%,5rem)] max-h-[58%] max-w-[40%] sm:h-[min(30%,5.85rem)] sm:w-[min(24%,5.35rem)]"
-                  : "relative h-[min(38%,7.75rem)] w-[min(28%,6.5rem)] max-h-[82%] max-w-[52%] sm:h-[min(40%,8.25rem)] sm:w-[min(30%,7rem)]"
+                  : isGrewalCard
+                    ? "relative h-[min(40%,6rem)] w-[min(40%,6rem)] max-h-[62%] max-w-[46%] sm:h-[min(42%,6.4rem)] sm:w-[min(42%,6.4rem)]"
+                    : "relative h-[min(38%,7.75rem)] w-[min(28%,6.5rem)] max-h-[82%] max-w-[52%] sm:h-[min(40%,8.25rem)] sm:w-[min(30%,7rem)]"
               }
             >
               <RevealImage
@@ -182,7 +186,7 @@ export default function PortfolioListCard({
           <span className="truncate font-general font-medium text-[clamp(11px,0.833vw,14px)] leading-snug text-foreground">
             {title}
           </span>
-          <span className="shrink-0 whitespace-nowrap font-quicksand font-light text-[clamp(8px,0.5vw,10px)] text-foreground/65 tabular-nums">
+          <span className="shrink-0 whitespace-nowrap font-quicksand font-medium text-[clamp(10px,0.677vw,12px)] text-foreground/65 tabular-nums">
             {date}
           </span>
         </div>
@@ -193,11 +197,13 @@ export default function PortfolioListCard({
         ) : null}
       </div>
 
-      <div className={cascadeClass} style={cascadeStep(2)}>
-        <p className="m-0 line-clamp-2 font-quicksand font-light text-[clamp(9px,0.625vw,11px)] leading-snug text-foreground/60">
-          {description}
-        </p>
-      </div>
+      {description ? (
+        <div className={cascadeClass} style={cascadeStep(2)}>
+          <p className="m-0 line-clamp-2 font-quicksand font-medium text-[clamp(10px,0.677vw,12px)] leading-snug text-foreground/60">
+            {description}
+          </p>
+        </div>
+      ) : null}
     </>
   );
 
