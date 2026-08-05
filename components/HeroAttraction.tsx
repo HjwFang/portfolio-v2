@@ -3,8 +3,16 @@
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
 import { ATTRACTION_DRAG_SENSITIVITY } from "@/components/heroAttractionYaw";
+import { NowPlaying } from "@/components/NowPlaying";
+import { X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
+
+/** A tap counts as a click (not a drag) when it barely moves and is brief. */
+const CLICK_MAX_TRAVEL_PX = 6;
+const CLICK_MAX_DURATION_MS = 300;
+/** Delay before revealing the tracklist, so the camera finishes diving inside first. */
+const TRACKLIST_REVEAL_DELAY_MS = 420;
 
 const HeroAttractionCanvas = dynamic(() => import("@/components/HeroAttractionCanvas"), {
     ssr: false,
@@ -15,6 +23,21 @@ export default function HeroAttraction() {
     const hoveredIndex = heroNavHoverCtx?.hoveredIndex ?? -1;
     const isAnyAttractionHovered = hoveredIndex !== -1;
     const [isCanvasReady, setIsCanvasReady] = useState(false);
+    const [showNowPlaying, setShowNowPlaying] = useState(false);
+    const [tracklistVisible, setTracklistVisible] = useState(false);
+
+    /** Tracks pointer travel so a tap can be told apart from an arcball drag. */
+    const tapTrackerRef = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, startTime: 0, travel: 0 });
+
+    // Reveal the tracklist only after the zoom-in settles; hide it immediately on close.
+    useEffect(() => {
+        if (!showNowPlaying) {
+            setTracklistVisible(false);
+            return;
+        }
+        const timer = setTimeout(() => setTracklistVisible(true), TRACKLIST_REVEAL_DELAY_MS);
+        return () => clearTimeout(timer);
+    }, [showNowPlaying]);
 
     useEffect(() => {
         if (!isAnyAttractionHovered) {
@@ -26,14 +49,6 @@ export default function HeroAttraction() {
             mod.preloadHeroAttractionAssets();
         });
     }, [isAnyAttractionHovered]);
-
-    const navSection = (() => {
-        if (hoveredIndex === 0) return { x: "1", label: "experiences" };
-        if (hoveredIndex === 1) return { x: "2", label: "projects" };
-        if (hoveredIndex === 2) return { x: "3", label: "misc gallery" };
-        // Default to the first section if context hasn't set yet.
-        return { x: "1", label: "experiences" };
-    })();
 
     const attractionInteractionRef = useRef({
         dragging: false,
@@ -138,6 +153,14 @@ export default function HeroAttraction() {
         ir.prevArcZ = v.z;
         ir.hasPrevArc = true;
 
+        const tap = tapTrackerRef.current;
+        tap.startX = e.clientX;
+        tap.startY = e.clientY;
+        tap.lastX = e.clientX;
+        tap.lastY = e.clientY;
+        tap.startTime = performance.now();
+        tap.travel = 0;
+
         // Warm up audio to unlock browser autoplay policy
         if (swingAudioRef.current && swingAudioRef.current.paused) {
             swingAudioRef.current.volume = 0;
@@ -150,6 +173,12 @@ export default function HeroAttraction() {
     const onAttractionPointerMove = (e: React.PointerEvent) => {
         const ir = attractionInteractionRef.current;
         if (!ir.dragging || !ir.hasPrevArc) return;
+
+        const tap = tapTrackerRef.current;
+        tap.travel += Math.hypot(e.clientX - tap.lastX, e.clientY - tap.lastY);
+        tap.lastX = e.clientX;
+        tap.lastY = e.clientY;
+
         const curr = pointerToArcball(e);
 
         const px = ir.prevArcX;
@@ -192,6 +221,20 @@ export default function HeroAttraction() {
         } catch {
             /* capture may already be released */
         }
+
+        // A genuine pointerup that barely moved is a tap → toggle the Spotify panel.
+        if (e.type === "pointerup") {
+            const tap = tapTrackerRef.current;
+            const dist = Math.hypot(e.clientX - tap.startX, e.clientY - tap.startY);
+            const duration = performance.now() - tap.startTime;
+            const isTap =
+                tap.travel < CLICK_MAX_TRAVEL_PX &&
+                dist < CLICK_MAX_TRAVEL_PX &&
+                duration < CLICK_MAX_DURATION_MS;
+            if (isTap) {
+                setShowNowPlaying((prev) => !prev);
+            }
+        }
     };
 
     return (
@@ -211,13 +254,6 @@ export default function HeroAttraction() {
                             isAnyAttractionHovered ? "opacity-70" : "opacity-50"
                         }`}
                     />
-
-                    {/* Bottom-left “nav section” label */}
-                    <div className="pointer-events-none absolute bottom-[clamp(12px,1vw,18px)] left-[clamp(12px,1vw,18px)] z-30">
-                        <div className="font-quicksand font-light text-foreground/60 text-[clamp(11px,0.677vw,13px)] tracking-wider">
-                            0{navSection.x} {navSection.label}
-                        </div>
-                    </div>
 
                     {/* Attraction: lazy Canvas + static placeholder until GLB is ready */}
                     <div
@@ -242,6 +278,7 @@ export default function HeroAttraction() {
                                 interactionRef={attractionInteractionRef}
                                 isReady={isCanvasReady}
                                 onReady={() => setIsCanvasReady(true)}
+                                zoomIn={showNowPlaying}
                             />
                         ) : null}
                     </div>
@@ -256,6 +293,42 @@ export default function HeroAttraction() {
                             className="size-[clamp(48px,4vw,64px)] rounded-full border border-foreground/10 opacity-80 flex items-center justify-center transition-all duration-300"
                         >
                             <div className="size-[clamp(8px,0.7vw,12px)] rounded-full transition-colors duration-300 bg-foreground/20" />
+                        </div>
+                    </div>
+
+                    {/* Spotify label: visible while the icosphere is present, hidden once entered */}
+                    <span
+                        className={`pointer-events-none absolute bottom-[clamp(14px,1.3vw,22px)] left-[clamp(14px,1.3vw,22px)] z-30 font-quicksand font-medium tracking-wide text-foreground/75 text-[clamp(10px,0.677vw,12px)] transition-opacity duration-500 ${
+                            isAnyAttractionHovered && !showNowPlaying ? "opacity-100" : "opacity-0"
+                        }`}
+                    >
+                        Spotify
+                    </span>
+
+                    {/* Spotify tracklist: renders directly inside the icosphere (no box); backdrop click closes */}
+                    <div
+                        onClick={() => setShowNowPlaying(false)}
+                        className={`absolute inset-0 z-40 flex flex-col p-[clamp(14px,1.3vw,22px)] transition-opacity duration-500 ${
+                            showNowPlaying ? "opacity-100" : "pointer-events-none opacity-0"
+                        }`}
+                    >
+                        <button
+                            type="button"
+                            onClick={() => setShowNowPlaying(false)}
+                            aria-label="Close now playing"
+                            className="absolute top-[clamp(10px,0.8vw,14px)] right-[clamp(10px,0.8vw,14px)] z-10 text-foreground/40 transition-colors hover:text-foreground"
+                        >
+                            <X className="size-[clamp(13px,0.9vw,16px)]" strokeWidth={1.5} />
+                        </button>
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            className={`min-h-0 flex-1 transition-all duration-500 ease-in-out ${
+                                tracklistVisible
+                                    ? "translate-y-0 opacity-100"
+                                    : "translate-y-2 opacity-0"
+                            }`}
+                        >
+                            {tracklistVisible ? <NowPlaying /> : null}
                         </div>
                     </div>
 

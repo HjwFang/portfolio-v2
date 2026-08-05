@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -20,6 +19,7 @@ function createHologramMaterial(patternScale: number) {
         uTime: { value: 0 },
         uColor: { value: new THREE.Color("#502e2e") },
         uPatternScale: { value: patternScale },
+        uOpacity: { value: 1 },
     };
 
     const vertexShader = `
@@ -44,6 +44,7 @@ function createHologramMaterial(patternScale: number) {
       uniform float uTime;
       uniform vec3 uColor;
       uniform float uPatternScale;
+      uniform float uOpacity;
 
       varying vec3 vNormal;
       varying vec3 vViewDir;
@@ -99,7 +100,7 @@ function createHologramMaterial(patternScale: number) {
 
         vec3 color = baseColor * (0.62 + fresnel * 2.0 + lineB * 0.15);
 
-        gl_FragColor = vec4(color, alpha);
+        gl_FragColor = vec4(color, alpha * uOpacity);
       }
     `;
 
@@ -115,6 +116,14 @@ function createHologramMaterial(patternScale: number) {
     });
 }
 
+/** Edge line opacity at rest vs. when dimmed. */
+const EDGE_OPACITY_RESTING = 0.92;
+const EDGE_OPACITY_DIMMED = 0.12;
+/** Shader fill multiplier when dimmed (1 = full at rest). */
+const FILL_OPACITY_DIMMED = 0.12;
+/** Higher = faster fade toward the target opacity. */
+const OPACITY_DAMP_RATE = 4;
+
 export type HologramGlbModelProps = {
     modelPath: string;
     /** Root scale on the loaded GLB; pattern freq uses 1/this so scanlines match mesh size. */
@@ -122,6 +131,8 @@ export type HologramGlbModelProps = {
     interactionRef: HeroAttractionInteractionRef;
     onReady?: () => void;
     rotation?: [number, number, number];
+    /** Fade the hologram down (e.g. while zoomed inside it). */
+    dimmed?: boolean;
 };
 
 export default function HologramGlbModel({
@@ -130,6 +141,7 @@ export default function HologramGlbModel({
     interactionRef,
     onReady,
     rotation = [0.2, 0, 0],
+    dimmed = false,
 }: HologramGlbModelProps) {
     const { scene } = useGLTF(modelPath, true, false);
     const groupRef = useRef<THREE.Group>(null);
@@ -202,6 +214,21 @@ export default function HologramGlbModel({
         hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
         hologramMaterial.uniforms.uColor.value.copy(themeColor);
         edgeMaterial.color.copy(themeColor);
+
+        const targetFill = dimmed ? FILL_OPACITY_DIMMED : 1;
+        const targetEdge = dimmed ? EDGE_OPACITY_DIMMED : EDGE_OPACITY_RESTING;
+        hologramMaterial.uniforms.uOpacity.value = THREE.MathUtils.damp(
+            hologramMaterial.uniforms.uOpacity.value,
+            targetFill,
+            OPACITY_DAMP_RATE,
+            delta,
+        );
+        edgeMaterial.opacity = THREE.MathUtils.damp(
+            edgeMaterial.opacity,
+            targetEdge,
+            OPACITY_DAMP_RATE,
+            delta,
+        );
 
         if (groupRef.current) {
             applyAttractionRotation(groupRef.current, interactionRef.current, delta);
