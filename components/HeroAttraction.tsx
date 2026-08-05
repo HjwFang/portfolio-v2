@@ -2,15 +2,11 @@
 
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import { useHeroNavHoverContext } from "@/components/HeroNavHoverContext";
-import { ATTRACTION_DRAG_SENSITIVITY } from "@/components/heroAttractionYaw";
 import { NowPlaying } from "@/components/NowPlaying";
 import { X } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 
-/** A tap counts as a click (not a drag) when it barely moves and is brief. */
-const CLICK_MAX_TRAVEL_PX = 6;
-const CLICK_MAX_DURATION_MS = 300;
 /** Delay before revealing the tracklist, so the camera finishes diving inside first. */
 const TRACKLIST_REVEAL_DELAY_MS = 420;
 
@@ -27,9 +23,6 @@ export default function HeroAttraction() {
     const [tracklistVisible, setTracklistVisible] = useState(false);
     /** Keep NowPlaying mounted after first open so reopen doesn't reload from scratch. */
     const [tracklistMounted, setTracklistMounted] = useState(false);
-
-    /** Tracks pointer travel so a tap can be told apart from an arcball drag. */
-    const tapTrackerRef = useRef({ startX: 0, startY: 0, lastX: 0, lastY: 0, startTime: 0, travel: 0 });
 
     // Reveal the tracklist only after the zoom-in settles; hide it immediately on close.
     useEffect(() => {
@@ -181,103 +174,6 @@ export default function HeroAttraction() {
         };
     }, []);
 
-    const pointerToArcball = (e: React.PointerEvent) => {
-        const rect = e.currentTarget.getBoundingClientRect();
-        const nx = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-        const ny = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-        const len2 = nx * nx + ny * ny;
-        if (len2 <= 1) {
-            return { x: nx, y: ny, z: Math.sqrt(1 - len2) };
-        }
-        const invLen = 1 / Math.sqrt(len2);
-        return { x: nx * invLen, y: ny * invLen, z: 0 };
-    };
-
-    const onAttractionPointerDown = (e: React.PointerEvent) => {
-        e.currentTarget.setPointerCapture(e.pointerId);
-        const ir = attractionInteractionRef.current;
-        ir.dragging = true;
-        const v = pointerToArcball(e);
-        ir.prevArcX = v.x;
-        ir.prevArcY = v.y;
-        ir.prevArcZ = v.z;
-        ir.hasPrevArc = true;
-
-        const tap = tapTrackerRef.current;
-        tap.startX = e.clientX;
-        tap.startY = e.clientY;
-        tap.lastX = e.clientX;
-        tap.lastY = e.clientY;
-        tap.startTime = performance.now();
-        tap.travel = 0;
-
-        // Unlock/prime the AudioContext on the user gesture so the zoom SFX can play.
-        ensureZoomAudioReady();
-    };
-
-    const onAttractionPointerMove = (e: React.PointerEvent) => {
-        const ir = attractionInteractionRef.current;
-        if (!ir.dragging || !ir.hasPrevArc) return;
-
-        const tap = tapTrackerRef.current;
-        tap.travel += Math.hypot(e.clientX - tap.lastX, e.clientY - tap.lastY);
-        tap.lastX = e.clientX;
-        tap.lastY = e.clientY;
-
-        const curr = pointerToArcball(e);
-
-        const px = ir.prevArcX;
-        const py = ir.prevArcY;
-        const pz = ir.prevArcZ;
-        const cx = curr.x;
-        const cy = curr.y;
-        const cz = curr.z;
-
-        // Axis in view-space from previous-to-current arcball vectors.
-        const ax = py * cz - pz * cy;
-        const ay = pz * cx - px * cz;
-        const az = px * cy - py * cx;
-        const axisLen = Math.hypot(ax, ay, az);
-        if (axisLen > 1e-6) {
-            const dot = Math.max(-1, Math.min(1, px * cx + py * cy + pz * cz));
-            const angle = Math.atan2(axisLen, dot) * ATTRACTION_DRAG_SENSITIVITY;
-            const invAxisLen = 1 / axisLen;
-            ir.pendingX += ax * invAxisLen * angle;
-            ir.pendingY += ay * invAxisLen * angle;
-            ir.pendingZ += az * invAxisLen * angle;
-        }
-
-        ir.prevArcX = cx;
-        ir.prevArcY = cy;
-        ir.prevArcZ = cz;
-    };
-
-    const onAttractionPointerUp = (e: React.PointerEvent) => {
-        const ir = attractionInteractionRef.current;
-        ir.dragging = false;
-        ir.hasPrevArc = false;
-
-        try {
-            e.currentTarget.releasePointerCapture(e.pointerId);
-        } catch {
-            /* capture may already be released */
-        }
-
-        // A genuine pointerup that barely moved is a tap → toggle the Spotify panel.
-        if (e.type === "pointerup") {
-            const tap = tapTrackerRef.current;
-            const dist = Math.hypot(e.clientX - tap.startX, e.clientY - tap.startY);
-            const duration = performance.now() - tap.startTime;
-            const isTap =
-                tap.travel < CLICK_MAX_TRAVEL_PX &&
-                dist < CLICK_MAX_TRAVEL_PX &&
-                duration < CLICK_MAX_DURATION_MS;
-            if (isTap) {
-                setShowNowPlaying((prev) => !prev);
-            }
-        }
-    };
-
     return (
         <div className="w-full flex items-center justify-center md:h-full md:min-h-0">
             <CrossingCornerBorder
@@ -302,24 +198,14 @@ export default function HeroAttraction() {
                             isAnyAttractionHovered ? "opacity-100" : "opacity-0 pointer-events-none"
                         }`}
                     >
-                        <div
-                            className="absolute inset-0 z-5 cursor-grab touch-none select-none active:cursor-grabbing"
-                            onPointerDown={onAttractionPointerDown}
-                            onPointerMove={onAttractionPointerMove}
-                            onPointerUp={onAttractionPointerUp}
-                            onPointerCancel={onAttractionPointerUp}
-                            onPointerLeave={(e) => {
-                                if (attractionInteractionRef.current.dragging) {
-                                    onAttractionPointerUp(e);
-                                }
-                            }}
-                        />
                         {isAnyAttractionHovered ? (
                             <HeroAttractionCanvas
                                 interactionRef={attractionInteractionRef}
                                 isReady={isCanvasReady}
                                 onReady={() => setIsCanvasReady(true)}
                                 zoomIn={showNowPlaying}
+                                onTap={() => setShowNowPlaying((prev) => !prev)}
+                                onGestureStart={ensureZoomAudioReady}
                             />
                         ) : null}
                     </div>

@@ -1,13 +1,18 @@
 "use client";
 import { useEffect, useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { useThemeForegroundLinearColor } from "@/components/useThemeColor";
 import {
     applyAttractionRotation,
+    ATTRACTION_DRAG_SENSITIVITY,
     type HeroAttractionInteractionRef,
 } from "@/components/heroAttractionYaw";
+
+/** A tap counts as a click (not a drag) when it barely moves and is brief. */
+const CLICK_MAX_TRAVEL_PX = 6;
+const CLICK_MAX_DURATION_MS = 300;
 
 /** Warm Draco + GLB cache when a model path is known (safe outside Canvas). */
 export function preloadGlbModel(modelPath: string) {
@@ -133,6 +138,10 @@ export type HologramGlbModelProps = {
     rotation?: [number, number, number];
     /** Fade the hologram down (e.g. while zoomed inside it). */
     dimmed?: boolean;
+    /** Fired on a short tap that lands on the mesh (not the empty frame). */
+    onTap?: () => void;
+    /** Fired on pointerdown so parent can unlock audio / prime gesture work. */
+    onGestureStart?: () => void;
 };
 
 export default function HologramGlbModel({
@@ -142,12 +151,27 @@ export default function HologramGlbModel({
     onReady,
     rotation = [0.2, 0, 0],
     dimmed = false,
+    onTap,
+    onGestureStart,
 }: HologramGlbModelProps) {
     const { scene } = useGLTF(modelPath, true, false);
     const groupRef = useRef<THREE.Group>(null);
     const themeColor = useThemeForegroundLinearColor();
+    const gl = useThree((state) => state.gl);
     const invalidate = useThree((state) => state.invalidate);
     const readyNotifiedRef = useRef(false);
+    const tapTrackerRef = useRef({
+        startX: 0,
+        startY: 0,
+        lastX: 0,
+        lastY: 0,
+        startTime: 0,
+        travel: 0,
+    });
+    const onTapRef = useRef(onTap);
+    const onGestureStartRef = useRef(onGestureStart);
+    onTapRef.current = onTap;
+    onGestureStartRef.current = onGestureStart;
 
     const hologramMaterial = useMemo(() => createHologramMaterial(1.0 / scale), [scale]);
 
@@ -185,6 +209,8 @@ export default function HologramGlbModel({
             const edges = new THREE.LineSegments(edgeGeo, edgeMaterial);
             edges.name = "HologramEdgeOverlay";
             edges.renderOrder = 1;
+            // Edges are decorative — only the mesh surface should receive hits.
+            edges.raycast = () => {};
             mesh.add(edges);
             edgeLines.push(edges);
         });
@@ -209,6 +235,147 @@ export default function HologramGlbModel({
     useEffect(() => {
         invalidate();
     }, [themeColor, invalidate]);
+
+    const pointerToArcball = (clientX: number, clientY: number) => {
+        const rect = gl.domElement.getBoundingClientRect();
+        const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+        const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
+        const len2 = nx * nx + ny * ny;
+        if (len2 <= 1) {
+            return { x: nx, y: ny, z: Math.sqrt(1 - len2) };
+        }
+        const invLen = 1 / Math.sqrt(len2);
+        return { x: nx * invLen, y: ny * invLen, z: 0 };
+    };
+
+    const setCanvasCursor = (cursor: string) => {
+        gl.domElement.style.cursor = cursor;
+    };
+
+    // Move/up on the canvas so drag continues after the pointer leaves the mesh silhouette.
+    useEffect(() => {
+        const el = gl.domElement;
+
+        const toArcball = (clientX: number, clientY: number) => {
+            const rect = el.getBoundingClientRect();
+            const nx = ((clientX - rect.left) / rect.width) * 2 - 1;
+            const ny = -(((clientY - rect.top) / rect.height) * 2 - 1);
+            const len2 = nx * nx + ny * ny;
+            if (len2 <= 1) {
+                return { x: nx, y: ny, z: Math.sqrt(1 - len2) };
+            }
+            const invLen = 1 / Math.sqrt(len2);
+            return { x: nx * invLen, y: ny * invLen, z: 0 };
+        };
+
+        const onPointerMove = (e: PointerEvent) => {
+            const ir = interactionRef.current;
+            if (!ir.dragging || !ir.hasPrevArc) return;
+
+            const tap = tapTrackerRef.current;
+            tap.travel += Math.hypot(e.clientX - tap.lastX, e.clientY - tap.lastY);
+            tap.lastX = e.clientX;
+            tap.lastY = e.clientY;
+
+            const curr = toArcball(e.clientX, e.clientY);
+            const px = ir.prevArcX;
+            const py = ir.prevArcY;
+            const pz = ir.prevArcZ;
+            const cx = curr.x;
+            const cy = curr.y;
+            const cz = curr.z;
+
+            const ax = py * cz - pz * cy;
+            const ay = pz * cx - px * cz;
+            const az = px * cy - py * cx;
+            const axisLen = Math.hypot(ax, ay, az);
+            if (axisLen > 1e-6) {
+                const dot = Math.max(-1, Math.min(1, px * cx + py * cy + pz * cz));
+                const angle = Math.atan2(axisLen, dot) * ATTRACTION_DRAG_SENSITIVITY;
+                const invAxisLen = 1 / axisLen;
+                ir.pendingX += ax * invAxisLen * angle;
+                ir.pendingY += ay * invAxisLen * angle;
+                ir.pendingZ += az * invAxisLen * angle;
+            }
+
+            ir.prevArcX = cx;
+            ir.prevArcY = cy;
+            ir.prevArcZ = cz;
+        };
+
+        const onPointerUp = (e: PointerEvent) => {
+            const ir = interactionRef.current;
+            if (!ir.dragging) return;
+
+            ir.dragging = false;
+            ir.hasPrevArc = false;
+            el.style.cursor = "default";
+
+            try {
+                if (el.hasPointerCapture(e.pointerId)) {
+                    el.releasePointerCapture(e.pointerId);
+                }
+            } catch {
+                /* capture may already be released */
+            }
+
+            if (e.type === "pointerup") {
+                const tap = tapTrackerRef.current;
+                const dist = Math.hypot(e.clientX - tap.startX, e.clientY - tap.startY);
+                const duration = performance.now() - tap.startTime;
+                const isTap =
+                    tap.travel < CLICK_MAX_TRAVEL_PX &&
+                    dist < CLICK_MAX_TRAVEL_PX &&
+                    duration < CLICK_MAX_DURATION_MS;
+                if (isTap) onTapRef.current?.();
+            }
+        };
+
+        el.addEventListener("pointermove", onPointerMove);
+        el.addEventListener("pointerup", onPointerUp);
+        el.addEventListener("pointercancel", onPointerUp);
+        return () => {
+            el.removeEventListener("pointermove", onPointerMove);
+            el.removeEventListener("pointerup", onPointerUp);
+            el.removeEventListener("pointercancel", onPointerUp);
+            el.style.cursor = "";
+        };
+    }, [gl, interactionRef]);
+
+    const onMeshPointerDown = (e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        const el = gl.domElement;
+        el.setPointerCapture(e.pointerId);
+        setCanvasCursor("grabbing");
+
+        const ir = interactionRef.current;
+        ir.dragging = true;
+        const v = pointerToArcball(e.clientX, e.clientY);
+        ir.prevArcX = v.x;
+        ir.prevArcY = v.y;
+        ir.prevArcZ = v.z;
+        ir.hasPrevArc = true;
+
+        const tap = tapTrackerRef.current;
+        tap.startX = e.clientX;
+        tap.startY = e.clientY;
+        tap.lastX = e.clientX;
+        tap.lastY = e.clientY;
+        tap.startTime = performance.now();
+        tap.travel = 0;
+
+        onGestureStartRef.current?.();
+    };
+
+    const onMeshPointerOver = (e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        if (!interactionRef.current.dragging) setCanvasCursor("grab");
+    };
+
+    const onMeshPointerOut = (e: ThreeEvent<PointerEvent>) => {
+        e.stopPropagation();
+        if (!interactionRef.current.dragging) setCanvasCursor("default");
+    };
 
     useFrame((state, delta) => {
         hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
@@ -243,7 +410,15 @@ export default function HologramGlbModel({
     });
 
     return (
-        <group ref={groupRef} dispose={null} position={[0, 0, 0]} rotation={rotation}>
+        <group
+            ref={groupRef}
+            dispose={null}
+            position={[0, 0, 0]}
+            rotation={rotation}
+            onPointerDown={onMeshPointerDown}
+            onPointerOver={onMeshPointerOver}
+            onPointerOut={onMeshPointerOut}
+        >
             <primitive object={modelRoot} scale={scale} />
         </group>
     );

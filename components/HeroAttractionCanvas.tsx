@@ -59,6 +59,8 @@ type HeroAttractionCanvasProps = {
     onReady?: () => void;
     /** When true, dolly the camera inside the icosphere. */
     zoomIn?: boolean;
+    onTap?: () => void;
+    onGestureStart?: () => void;
 };
 
 export default function HeroAttractionCanvas({
@@ -66,6 +68,8 @@ export default function HeroAttractionCanvas({
     isReady,
     onReady,
     zoomIn = false,
+    onTap,
+    onGestureStart,
 }: HeroAttractionCanvasProps) {
     return (
         <>
@@ -74,8 +78,8 @@ export default function HeroAttractionCanvas({
             />
 
             <Canvas
-                className={`absolute inset-0 z-0 pointer-events-none transition-opacity duration-500 ${
-                    isReady ? "opacity-100" : "opacity-0"
+                className={`absolute inset-0 z-0 touch-none select-none transition-opacity duration-500 ${
+                    isReady ? "opacity-100" : "pointer-events-none opacity-0"
                 }`}
                 frameloop="demand"
                 dpr={[1, 1.5]}
@@ -96,6 +100,8 @@ export default function HeroAttractionCanvas({
                         interactionRef={interactionRef}
                         onReady={onReady}
                         dimmed={zoomIn}
+                        onTap={onTap}
+                        onGestureStart={onGestureStart}
                     />
                 </Suspense>
             </Canvas>

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import InteractiveBackground from "@/components/InteractiveBackground";
@@ -14,6 +14,14 @@ const generalSans = localFont({
 export const metadata: Metadata = {
   title: "horst fang",
   description: "swe @QuickPOS, syde @uwaterloo",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

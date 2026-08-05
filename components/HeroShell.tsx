@@ -58,7 +58,7 @@ function BrandLockup() {
   return (
     <div
       ref={frameRef}
-      className="w-full md:w-fit"
+      className="w-full overflow-hidden md:w-fit md:overflow-visible"
       style={slotHeight != null ? { height: slotHeight } : undefined}
     >
       <div
