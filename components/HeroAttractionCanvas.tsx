@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import HeroAttractionPlaceholder from "@/components/HeroAttractionPlaceholder";
@@ -31,6 +31,29 @@ const CAMERA_CONFIG = {
 /** Warm Draco + GLB cache when nav hover begins (safe outside Canvas). */
 export function preloadHeroAttractionAssets() {
     preloadGlbModel(ATTRACTION_MODEL_PATH);
+}
+
+/**
+ * R3F sets an inline `touch-action: none` on the canvas, which blocks page scroll.
+ * On mobile, restore vertical pan so swipes in the icosphere box scroll the screen.
+ */
+function MobilePageScrollTouchAction() {
+    const gl = useThree((state) => state.gl);
+
+    useEffect(() => {
+        const el = gl.domElement;
+        const mq = window.matchMedia("(min-width: 768px)");
+        const apply = () => {
+            el.style.touchAction = mq.matches ? "none" : "pan-y";
+        };
+        apply();
+        mq.addEventListener("change", apply);
+        return () => {
+            mq.removeEventListener("change", apply);
+        };
+    }, [gl]);
+
+    return null;
 }
 
 /** Smoothly dollies the camera into / out of the icosphere when `active` toggles. */
@@ -78,7 +101,7 @@ export default function HeroAttractionCanvas({
             />
 
             <Canvas
-                className={`absolute inset-0 z-0 touch-none select-none transition-opacity duration-500 ${
+                className={`absolute inset-0 z-0 touch-pan-y select-none md:touch-none transition-opacity duration-500 ${
                     isReady ? "opacity-100" : "pointer-events-none opacity-0"
                 }`}
                 frameloop="demand"
@@ -92,6 +115,7 @@ export default function HeroAttractionCanvas({
                     toneMappingExposure: 1.4,
                 }}
             >
+                <MobilePageScrollTouchAction />
                 <CameraZoomController active={zoomIn} />
                 <Suspense fallback={null}>
                     <HologramGlbModel
