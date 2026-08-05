@@ -4,6 +4,7 @@ import "./globals.css";
 import InteractiveBackground from "@/components/InteractiveBackground";
 import CustomCursor from "@/components/CustomCursor";
 import SoundManager from "@/components/SoundManager";
+import { Analytics } from "@vercel/analytics/next";
 
 const generalSans = localFont({
   src: "./fonts/GeneralSans-Variable.ttf",
@@ -30,6 +31,7 @@ export default function RootLayout({
         <div className="relative z-10">
           {children}
         </div>
+        <Analytics />
       </body>
     </html>
   );
