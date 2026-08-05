@@ -2,7 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 
+const FINE_POINTER_QUERY = "(hover: hover) and (pointer: fine)";
+
 export default function CustomCursor() {
+    const [isEnabled, setIsEnabled] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [isPointer, setIsPointer] = useState(false);
     const cursorRef = useRef<HTMLDivElement>(null);
@@ -10,6 +13,17 @@ export default function CustomCursor() {
     const delayedPos = useRef({ x: 0, y: 0 });
 
     useEffect(() => {
+        const media = window.matchMedia(FINE_POINTER_QUERY);
+        const syncEnabled = () => setIsEnabled(media.matches);
+
+        syncEnabled();
+        media.addEventListener("change", syncEnabled);
+        return () => media.removeEventListener("change", syncEnabled);
+    }, []);
+
+    useEffect(() => {
+        if (!isEnabled) return;
+
         const onMouseMove = (e: MouseEvent) => {
             mousePos.current = { x: e.clientX, y: e.clientY };
             if (!isVisible) setIsVisible(true);
@@ -57,53 +71,42 @@ export default function CustomCursor() {
             document.removeEventListener("mouseenter", onMouseEnter);
             cancelAnimationFrame(animationFrameId);
         };
-    }, [isVisible]);
+    }, [isEnabled, isVisible]);
 
-    // Check if on client to avoid SSR issues
-    const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => setIsMounted(true), []);
-
-    if (!isMounted) return null;
+    if (!isEnabled) return null;
 
     return (
-        <>
-            <style dangerouslySetInnerHTML={{ __html: `
-                html, body, * {
-                    cursor: none !important;
-                }
-            `}} />
+        <div
+            ref={cursorRef}
+            className="pointer-events-none fixed left-0 top-0 z-[9999] will-change-transform"
+            style={{
+                opacity: isVisible ? 1 : 0,
+                transition: "opacity 0.2s ease-in-out",
+            }}
+        >
             <div
-                ref={cursorRef}
-                className="pointer-events-none fixed left-0 top-0 z-[9999] will-change-transform"
+                className="fill-[var(--color-foreground)]"
                 style={{
-                    opacity: isVisible ? 1 : 0,
-                    transition: "opacity 0.2s ease-in-out",
+                    transform: `scale(${isPointer ? 1.25 : 1})`,
+                    transition: "transform 0.15s ease-out"
                 }}
             >
-                <div 
-                    className="fill-[var(--color-foreground)]"
-                    style={{
-                        transform: `scale(${isPointer ? 1.25 : 1})`,
-                        transition: "transform 0.15s ease-out"
-                    }}
+                <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
                 >
-                    <svg
-                        width="24"
-                        height="24"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-                        <path
-                            d="M0,0 v17.5 l5,-5 h8 L0,0 z"
-                            fill="currentColor"
-                            stroke="#fffeee"
-                            strokeWidth="1.2"
-                            strokeLinejoin="round"
-                        />
-                    </svg>
-                </div>
+                    <path
+                        d="M0,0 v17.5 l5,-5 h8 L0,0 z"
+                        fill="currentColor"
+                        stroke="#fffeee"
+                        strokeWidth="1.2"
+                        strokeLinejoin="round"
+                    />
+                </svg>
             </div>
-        </>
+        </div>
     );
 }

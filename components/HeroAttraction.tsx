@@ -274,7 +274,7 @@ export default function HeroAttraction() {
             <CrossingCornerBorder
                 bleed="clamp(3px, 0.3125vw, 6px)"
                 thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="w-full aspect-square max-h-[25vh] lg:aspect-auto lg:h-full lg:max-h-none"
+                className="w-full aspect-[5/3] lg:aspect-auto lg:h-full lg:max-h-none"
             >
                 <div
                     className={`w-full h-full flex items-center justify-center relative group overflow-hidden transition-colors duration-300 ${
