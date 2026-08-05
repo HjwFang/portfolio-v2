@@ -37,12 +37,20 @@ const WAVE_HEIGHTS = [
 
 function SoundWave() {
   return (
-    <div className="flex items-center gap-[2px] h-[clamp(9px,0.7vw,12px)]" aria-hidden>
+    <div
+      className="flex items-center"
+      style={{ height: "var(--np-wave-h)", gap: "var(--np-wave-gap)" }}
+      aria-hidden
+    >
       {WAVE_HEIGHTS.map((h, i) => (
         <span
           key={i}
-          className="now-playing-bar w-[1.5px] rounded-full bg-light-brown"
-          style={{ height: `${h}%`, animationDelay: `${(i % 5) * 0.12}s` }}
+          className="now-playing-bar rounded-full bg-light-brown"
+          style={{
+            width: "var(--np-wave-w)",
+            height: `${h}%`,
+            animationDelay: `${(i % 5) * 0.12}s`,
+          }}
         />
       ))}
     </div>
@@ -62,12 +70,21 @@ function SectionHeader({
 }) {
   return (
     <div
-      style={{ "--cascade-step": cascadeStep } as React.CSSProperties}
+      style={
+        {
+          "--cascade-step": cascadeStep,
+          gap: "var(--np-row-gap)",
+          marginBottom: "var(--np-section-gap)",
+        } as React.CSSProperties
+      }
       className={`${
         reveal ? "now-playing-cascade " : ""
-      }flex items-center gap-[clamp(8px,0.8vw,12px)] mb-[clamp(5px,0.4vw,9px)]`}
+      }flex items-center`}
     >
-      <span className="font-general font-medium leading-snug text-foreground text-[clamp(11px,0.833vw,14px)] whitespace-nowrap">
+      <span
+        className="font-general font-medium leading-snug text-foreground whitespace-nowrap"
+        style={{ fontSize: "var(--np-label)" }}
+      >
         {children}
       </span>
       {wave && (
@@ -95,35 +112,48 @@ function Row({
       href={track.url}
       target="_blank"
       rel="noreferrer"
-      className={`group/row flex w-full items-center justify-between gap-[clamp(6px,0.7vw,12px)] p-[clamp(7px,0.6vw,10px)] transition-colors ${
+      style={{ gap: "var(--np-row-gap)", padding: "var(--np-row-pad)" }}
+      className={`group/row flex w-full items-center justify-between transition-colors ${
         highlight
           ? "text-background"
           : "text-foreground/80 hover:bg-foreground/10 hover:text-foreground"
       }`}
     >
-      <span className="flex min-w-0 flex-1 items-center gap-[clamp(8px,0.8vw,12px)]">
+      <span
+        className="flex min-w-0 flex-1 items-center"
+        style={{ gap: "var(--np-row-gap)" }}
+      >
         <img
           src={track.albumArt}
           alt=""
-          className="aspect-square h-[clamp(30px,2.6vw,40px)] w-[clamp(30px,2.6vw,40px)] object-cover shrink-0"
+          className="aspect-square object-cover shrink-0"
+          style={{
+            width: "var(--np-art)",
+            height: "var(--np-art)",
+          }}
         />
         <span className="min-w-0 flex-1">
-          <span className="block truncate font-general text-[clamp(11px,0.75vw,14px)]">
+          <span
+            className="block truncate font-general"
+            style={{ fontSize: "var(--np-title)" }}
+          >
             {track.title}
           </span>
           <span
-            className={`block truncate font-quicksand font-medium leading-snug text-[clamp(10px,0.677vw,12px)] ${
+            className={`block truncate font-quicksand font-medium leading-snug ${
               highlight ? "text-background/70" : "text-foreground/60"
             }`}
+            style={{ fontSize: "var(--np-artist)" }}
           >
             {track.artist}
           </span>
         </span>
       </span>
       <span
-        className={`shrink-0 font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70 ${
+        className={`shrink-0 font-quicksand opacity-70 ${
           highlight ? "visible" : "invisible group-hover/row:visible"
         }`}
+        style={{ fontSize: "var(--np-meta)" }}
         aria-hidden
       >
         »»
@@ -140,8 +170,8 @@ function Row({
       >
         <CrossingCornerBorder
           color="#c4a484"
-          bleed="clamp(2px, 0.208vw, 4px)"
-          thickness="clamp(1px, 0.052vw, 1px)"
+          bleed="var(--np-bleed)"
+          thickness="1px"
           className="flex w-full bg-foreground"
         >
           {content}
@@ -157,6 +187,86 @@ function Row({
       className={`${reveal ? "now-playing-cascade " : ""}flex w-full`}
     >
       {content}
+    </div>
+  );
+}
+
+function SkeletonBone({
+  className = "",
+  style,
+  delay = 0,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+  delay?: number;
+}) {
+  return (
+    <span
+      className={`now-playing-skeleton-bone block ${className}`}
+      style={{ ...style, animationDelay: `${delay}s` }}
+      aria-hidden
+    />
+  );
+}
+
+function SkeletonRow({ delay = 0 }: { delay?: number }) {
+  return (
+    <div
+      className="flex w-full items-center"
+      style={{
+        gap: "var(--np-row-gap)",
+        padding: "var(--np-row-pad)",
+      }}
+    >
+      <SkeletonBone
+        className="shrink-0 aspect-square"
+        style={{ width: "var(--np-art)", height: "var(--np-art)" }}
+        delay={delay}
+      />
+      <span className="flex min-w-0 flex-1 flex-col" style={{ gap: "var(--np-section-gap)" }}>
+        <SkeletonBone
+          style={{ height: "var(--np-title)", width: "62%" }}
+          delay={delay + 0.05}
+        />
+        <SkeletonBone
+          style={{ height: "var(--np-artist)", width: "38%" }}
+          delay={delay + 0.1}
+        />
+      </span>
+    </div>
+  );
+}
+
+function NowPlayingSkeleton() {
+  return (
+    <div
+      className="flex h-full w-full min-h-0 flex-col justify-center"
+      style={{ gap: "var(--np-gap)" }}
+      role="status"
+      aria-label="Loading tracks"
+    >
+      <div className="flex flex-col">
+        <div style={{ marginBottom: "var(--np-section-gap)" }}>
+          <SkeletonBone
+            style={{ height: "var(--np-label)", width: "22%" }}
+            delay={0}
+          />
+        </div>
+        <SkeletonRow delay={0.08} />
+      </div>
+      <div className="flex flex-col">
+        <div style={{ marginBottom: "var(--np-section-gap)" }}>
+          <SkeletonBone
+            style={{ height: "var(--np-label)", width: "30%" }}
+            delay={0.16}
+          />
+        </div>
+        <div className="flex flex-col">
+          <SkeletonRow delay={0.22} />
+          <SkeletonRow delay={0.3} />
+          <SkeletonRow delay={0.38} />
+        </div>
+      </div>
     </div>
   );
 }
@@ -189,13 +299,15 @@ export function NowPlaying() {
   }, [promoted]);
 
   useEffect(() => {
+    let cancelled = false;
     const load = () =>
       fetch("/api/spotify")
         .then((r) => r.json())
         .then((d: { nowPlaying: Track | null; recent: Track[] }) => {
+          if (cancelled || !d || !Array.isArray(d.recent)) return;
           setData(d);
 
-          const now = d?.nowPlaying ?? null;
+          const now = d.nowPlaying ?? null;
           const prev = liveRef.current;
           // The live song switched away (stopped or changed). If it had racked
           // up at least 30s of play, move it into recently played.
@@ -213,8 +325,12 @@ export function NowPlaying() {
         })
         .catch(() => {});
     load();
-    const id = setInterval(load, 10000);
-    return () => clearInterval(id);
+    // Now-playing should feel live; server caches ~15s so this won't burn quota.
+    const id = setInterval(load, 15_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, []);
 
   // Hand motion over from the one-time CSS cascade to FLIP once the initial
@@ -300,12 +416,7 @@ export function NowPlaying() {
     prevRects.current = nextRects;
   });
 
-  if (!data)
-    return (
-      <div className="font-quicksand font-light text-foreground/40 text-[clamp(9px,0.62vw,12px)]">
-        loading…
-      </div>
-    );
+  if (!data) return <NowPlayingSkeleton />;
 
   // Local promotions sit ahead of Spotify's recently-played, deduped by id.
   const recent = [
@@ -322,24 +433,34 @@ export function NowPlaying() {
 
   const reveal = !revealed;
 
+  if (!featured) {
+    return (
+      <div
+        className="font-quicksand font-light text-foreground/40"
+        style={{ fontSize: "var(--np-status)" }}
+      >
+        no recent tracks
+      </div>
+    );
+  }
+
   return (
     <div
       ref={rootRef}
-      className="flex h-full w-full flex-col justify-center gap-[clamp(10px,0.9vw,16px)]"
+      className="flex h-full w-full min-h-0 flex-col justify-center"
+      style={{ gap: "var(--np-gap)" }}
     >
-      {featured && (
-        <div className="flex flex-col">
-          <SectionHeader wave={!!data.nowPlaying} cascadeStep={step++} reveal={reveal}>
-            {data.nowPlaying ? "now playing" : "last played"}
-          </SectionHeader>
-          <Row
-            track={featured}
-            cascadeStep={step++}
-            highlight={!!data.nowPlaying}
-            reveal={reveal}
-          />
-        </div>
-      )}
+      <div className="flex flex-col">
+        <SectionHeader wave={!!data.nowPlaying} cascadeStep={step++} reveal={reveal}>
+          {data.nowPlaying ? "now playing" : "last played"}
+        </SectionHeader>
+        <Row
+          track={featured}
+          cascadeStep={step++}
+          highlight={!!data.nowPlaying}
+          reveal={reveal}
+        />
+      </div>
       {tracklist.length > 0 && (
         <div className="flex flex-col">
           <SectionHeader cascadeStep={step++} reveal={reveal}>
@@ -348,7 +469,7 @@ export function NowPlaying() {
           <div className="flex flex-col">
             {tracklist.map((t) => (
               <Row
-                key={t.id + t.playedAt}
+                key={t.id + (t.playedAt ?? "")}
                 track={t}
                 cascadeStep={step++}
                 reveal={reveal}

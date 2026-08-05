@@ -135,6 +135,75 @@ body::-webkit-scrollbar {
   }
 }
 
+/*
+ * Tracklist scale is relative to the attraction box (container queries),
+ * so type/spacing/art keep the same proportions at every screen size.
+ * cqmin = min(cqw, cqh) — stays balanced in both wide and short boxes.
+ */
+.now-playing-panel {
+  container-type: size;
+  container-name: now-playing;
+}
+
+.now-playing-panel__close {
+  top: clamp(10px, 2.8cqmin, 16px);
+  right: clamp(10px, 2.8cqmin, 16px);
+}
+
+.now-playing-panel__close-icon {
+  width: clamp(14px, 3.6cqmin, 20px);
+  height: clamp(14px, 3.6cqmin, 20px);
+}
+
+.now-playing-scale {
+  --np-pad: clamp(20px, 6cqmin, 36px);
+  --np-gap: clamp(14px, 4.5cqmin, 24px);
+  --np-label: clamp(11px, 3.2cqmin, 16px);
+  --np-title: clamp(12px, 3.4cqmin, 17px);
+  --np-artist: clamp(10px, 2.8cqmin, 14px);
+  --np-meta: clamp(11px, 2.9cqmin, 15px);
+  --np-art: clamp(32px, 9.5cqmin, 52px);
+  --np-row-pad: clamp(7px, 2cqmin, 13px);
+  --np-row-gap: clamp(7px, 2.3cqmin, 14px);
+  --np-section-gap: clamp(5px, 1.6cqmin, 10px);
+  --np-wave-h: clamp(9px, 2.5cqmin, 14px);
+  --np-wave-w: clamp(1.5px, 0.4cqmin, 2.5px);
+  --np-wave-gap: clamp(1.5px, 0.45cqmin, 2.5px);
+  --np-bleed: clamp(2px, 0.6cqmin, 5px);
+  --np-status: clamp(10px, 2.5cqmin, 13px);
+
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: var(--np-pad);
+}
+
+@keyframes now-playing-skeleton {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.now-playing-skeleton-bone {
+  background: color-mix(in srgb, var(--color-foreground) 14%, transparent);
+  border-radius: 1px;
+  animation: now-playing-skeleton 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .now-playing-skeleton-bone {
+    animation: none;
+    opacity: 0.45;
+  }
+}
+
 .portfolio-card-image-link {
   transform: translate3d(0, 0, 0);
   transition:

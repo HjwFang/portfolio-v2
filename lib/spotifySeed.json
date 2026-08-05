@@ -1,0 +1,69 @@
+{
+  "nowPlaying": null,
+  "recent": [
+    {
+      "id": "5DZOKNtaoVEssXu9ltcMjx",
+      "title": "oh well",
+      "artist": "Ariana Grande",
+      "albumArt": "https://i.scdn.co/image/ab67616d000048518baf677ee2d8dda6cc9fcbd7",
+      "url": "https://open.spotify.com/track/5DZOKNtaoVEssXu9ltcMjx",
+      "playedAt": "2026-08-05T09:00:36.941Z"
+    },
+    {
+      "id": "3iy2QuCtCzpWnR6tia39AB",
+      "title": "hate that i made you love me",
+      "artist": "Ariana Grande",
+      "albumArt": "https://i.scdn.co/image/ab67616d000048518baf677ee2d8dda6cc9fcbd7",
+      "url": "https://open.spotify.com/track/3iy2QuCtCzpWnR6tia39AB",
+      "playedAt": "2026-08-05T08:55:17.900Z"
+    },
+    {
+      "id": "3RwWW7KeVhHGayYJgUL5eZ",
+      "title": "eternal sunshine",
+      "artist": "Ariana Grande",
+      "albumArt": "https://i.scdn.co/image/ab67616d000048518b58d20f1b77295730db15b4",
+      "url": "https://open.spotify.com/track/3RwWW7KeVhHGayYJgUL5eZ",
+      "playedAt": "2026-08-05T08:51:56.718Z"
+    },
+    {
+      "id": "4t4rGgiVX7woTmlnW9SHJ7",
+      "title": "Residuals",
+      "artist": "Chris Brown",
+      "albumArt": "https://i.scdn.co/image/ab67616d000048510d64604af39b3427ef41fe3a",
+      "url": "https://open.spotify.com/track/4t4rGgiVX7woTmlnW9SHJ7",
+      "playedAt": "2026-08-05T08:51:40.118Z"
+    },
+    {
+      "id": "3sHPSPSfMzziQD1v6U6vz0",
+      "title": "Wrist (feat. Solo Lucci)",
+      "artist": "Chris Brown, Solo Lucci",
+      "albumArt": "https://i.scdn.co/image/ab67616d00004851e79a8c2255e2e88916f4fd93",
+      "url": "https://open.spotify.com/track/3sHPSPSfMzziQD1v6U6vz0",
+      "playedAt": "2026-08-05T08:47:20.659Z"
+    },
+    {
+      "id": "1UTm2IATfGWWIbTC9sAxi2",
+      "title": "Blurred - Twitch Tapes",
+      "artist": "Tory Lanez",
+      "albumArt": "https://i.scdn.co/image/ab67616d000048515907177f99b29c5e497857ae",
+      "url": "https://open.spotify.com/track/1UTm2IATfGWWIbTC9sAxi2",
+      "playedAt": "2026-08-05T08:43:48.159Z"
+    },
+    {
+      "id": "3tPAguSVQOuknSwsQC7Czu",
+      "title": "F&V - Prison Tapes",
+      "artist": "Tory Lanez",
+      "albumArt": "https://i.scdn.co/image/ab67616d00004851ba1696ce29773b3ac2e0ecaf",
+      "url": "https://open.spotify.com/track/3tPAguSVQOuknSwsQC7Czu",
+      "playedAt": "2026-08-05T08:38:58.874Z"
+    },
+    {
+      "id": "3wKKkGVn7cVSfgPeYYIiXG",
+      "title": "Kiss Kiss (feat. T-Pain)",
+      "artist": "Chris Brown, T-Pain",
+      "albumArt": "https://i.scdn.co/image/ab67616d0000485139509cc5eadf803928f2f167",
+      "url": "https://open.spotify.com/track/3wKKkGVn7cVSfgPeYYIiXG",
+      "playedAt": "2026-08-05T08:36:19.001Z"
+    }
+  ]
+}

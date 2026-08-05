@@ -42,3 +42,6 @@ next-env.d.ts
 
 .env*
 .vercel
+
+# local Spotify last-good cache (dev rate-limit fallback)
+.spotify-cache.json

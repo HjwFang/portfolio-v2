@@ -340,7 +340,7 @@ export default function HeroAttraction() {
                     {/* Spotify tracklist: renders directly inside the icosphere (no box); backdrop click closes */}
                     <div
                         onClick={() => setShowNowPlaying(false)}
-                        className={`absolute inset-0 z-40 flex flex-col p-[clamp(14px,1.3vw,22px)] transition-opacity duration-500 ${
+                        className={`now-playing-panel absolute inset-0 z-40 flex flex-col transition-opacity duration-500 ${
                             showNowPlaying ? "opacity-100" : "pointer-events-none opacity-0"
                         }`}
                     >
@@ -348,13 +348,13 @@ export default function HeroAttraction() {
                             type="button"
                             onClick={() => setShowNowPlaying(false)}
                             aria-label="Close now playing"
-                            className="absolute top-[clamp(10px,0.8vw,14px)] right-[clamp(10px,0.8vw,14px)] z-10 text-foreground/40 transition-colors hover:text-foreground"
+                            className="now-playing-panel__close absolute z-10 text-foreground/40 transition-colors hover:text-foreground"
                         >
-                            <X className="size-[clamp(13px,0.9vw,16px)]" strokeWidth={1.5} />
+                            <X className="now-playing-panel__close-icon" strokeWidth={1.5} />
                         </button>
                         <div
                             onClick={(e) => e.stopPropagation()}
-                            className={`min-h-0 flex-1 transition-all duration-500 ease-in-out ${
+                            className={`now-playing-scale min-h-0 flex-1 transition-all duration-500 ease-in-out ${
                                 tracklistVisible
                                     ? "translate-y-0 opacity-100"
                                     : "translate-y-2 opacity-0"
