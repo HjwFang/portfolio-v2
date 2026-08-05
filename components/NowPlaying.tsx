@@ -286,8 +286,15 @@ function NowPlayingSkeleton() {
           <SkeletonRow delay={0.22} />
           <SkeletonRow delay={0.3} />
           <SkeletonRow delay={0.38} />
+          <SkeletonRow delay={0.46} />
+          <SkeletonRow delay={0.54} />
+          <SkeletonRow delay={0.62} />
+          <SkeletonRow delay={0.7} />
+          <SkeletonRow delay={0.78} />
         </div>
       </div>
+      {/* Match live list: clear the bottom feather when scrolled to the end. */}
+      <div aria-hidden style={{ height: "var(--np-feather)", flexShrink: 0 }} />
     </div>
   );
 }
@@ -352,8 +359,9 @@ export function NowPlaying() {
 
   // Hand motion over from the one-time CSS cascade to FLIP once the initial
   // reveal has finished playing (longest delayed row + its duration).
+  // Max step ≈ 10 (featured + header + 8 recent) × 180ms + 1.1s anim ≈ 2.9s.
   useEffect(() => {
-    const t = setTimeout(() => setRevealed(true), 2600);
+    const t = setTimeout(() => setRevealed(true), 3200);
     return () => clearTimeout(t);
   }, []);
 
@@ -437,8 +445,7 @@ export function NowPlaying() {
 
   const recent = data.recent;
   const featured = data.nowPlaying ?? recent[0] ?? null;
-  const rest = recent.filter((t) => t.id !== featured?.id);
-  const tracklist = rest.slice(0, 3);
+  const tracklist = recent.filter((t) => t.id !== featured?.id);
 
   // Running index so headers + rows cascade sequentially from top to bottom.
   let step = 0;
@@ -493,6 +500,8 @@ export function NowPlaying() {
           </div>
         </div>
       )}
+      {/* Scroll past the bottom feather so the last track stays fully visible. */}
+      <div aria-hidden style={{ height: "var(--np-feather)", flexShrink: 0 }} />
     </div>
   );
 }
