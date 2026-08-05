@@ -61,74 +61,116 @@ export default function HeroAttraction() {
         pendingZ: 0,
     });
 
-    // --- Drag hum: loop + smoothed envelope (no clip restarts / random jumps). ---
-    const swingAudioRef = useRef<HTMLAudioElement | null>(null);
-    const dragActiveForAudioRef = useRef(false);
-    const audioPeakRef = useRef(0);
-    const audioDisplayRef = useRef(0);
-    const audioRafRef = useRef<number | null>(null);
+    // --- Zoom SFX: plays forward diving into the sphere, reversed on the way out. ---
+    const audioCtxRef = useRef<AudioContext | null>(null);
+    const forwardBufferRef = useRef<AudioBuffer | null>(null);
+    const reversedBufferRef = useRef<AudioBuffer | null>(null);
+    const activeSourceRef = useRef<AudioBufferSourceNode | null>(null);
+    /** Direction requested before the buffer finished decoding. */
+    const pendingDirectionRef = useRef<"forward" | "reversed" | null>(null);
+    /** Skip firing the SFX for the initial (closed) render. */
+    const didInitZoomStateRef = useRef(false);
 
-    /** Maps arcball step angle (~0–0.3 typical) into a 0–1-ish drive for the hum. */
-    const ANGLE_TO_AUDIO_PEAK = 10;
-    const AUDIO_PEAK_DECAY = 0.93;
-    const AUDIO_DISPLAY_LERP = 0.16;
+    const ZOOM_SFX_VOLUME = 0.45;
+    /** Playback speed per direction: normal diving in, quicker on the reversed pull-out. */
+    const ZOOM_SFX_RATE_IN = 1;
+    const ZOOM_SFX_RATE_OUT = 1.6;
+
+    /** Create/resume the AudioContext and lazily decode the clip (+ a reversed copy). */
+    const ensureZoomAudioReady = () => {
+        if (typeof window === "undefined") return;
+
+        if (!audioCtxRef.current) {
+            const Ctor =
+                window.AudioContext ??
+                (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+            if (!Ctor) return;
+            audioCtxRef.current = new Ctor();
+        }
+
+        const ctx = audioCtxRef.current;
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+        if (forwardBufferRef.current) return;
+
+        fetch("/sounds/dragon-studio-hum-390295.mp3")
+            .then((res) => res.arrayBuffer())
+            .then((data) => ctx.decodeAudioData(data))
+            .then((buffer) => {
+                forwardBufferRef.current = buffer;
+
+                const reversed = ctx.createBuffer(
+                    buffer.numberOfChannels,
+                    buffer.length,
+                    buffer.sampleRate,
+                );
+                for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+                    const src = buffer.getChannelData(ch);
+                    const dst = reversed.getChannelData(ch);
+                    for (let i = 0, j = buffer.length - 1; i < buffer.length; i++, j--) {
+                        dst[i] = src[j];
+                    }
+                }
+                reversedBufferRef.current = reversed;
+
+                if (pendingDirectionRef.current) {
+                    const dir = pendingDirectionRef.current;
+                    pendingDirectionRef.current = null;
+                    playZoomSfx(dir);
+                }
+            })
+            .catch(() => {});
+    };
+
+    const playZoomSfx = (direction: "forward" | "reversed") => {
+        const ctx = audioCtxRef.current;
+        const buffer =
+            direction === "forward" ? forwardBufferRef.current : reversedBufferRef.current;
+
+        // Buffer may still be decoding — remember the latest request and bail.
+        if (!ctx || !buffer) {
+            pendingDirectionRef.current = direction;
+            return;
+        }
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+        try {
+            activeSourceRef.current?.stop();
+        } catch {
+            /* previous source may have already ended */
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value =
+            direction === "forward" ? ZOOM_SFX_RATE_IN : ZOOM_SFX_RATE_OUT;
+        const gain = ctx.createGain();
+        gain.gain.value = ZOOM_SFX_VOLUME;
+        source.connect(gain).connect(ctx.destination);
+        source.start();
+        activeSourceRef.current = source;
+    };
+
+    // Play the clip forward on zoom-in, reversed on zoom-out (any close path).
+    useEffect(() => {
+        if (!didInitZoomStateRef.current) {
+            didInitZoomStateRef.current = true;
+            return;
+        }
+        ensureZoomAudioReady();
+        playZoomSfx(showNowPlaying ? "forward" : "reversed");
+    }, [showNowPlaying]);
 
     useEffect(() => {
-        const swing = new Audio("/sounds/dragon-studio-hum-390295.mp3");
-        swing.loop = true;
-        swing.volume = 0;
-        swingAudioRef.current = swing;
-
         return () => {
-            if (audioRafRef.current != null) {
-                cancelAnimationFrame(audioRafRef.current);
-                audioRafRef.current = null;
+            try {
+                activeSourceRef.current?.stop();
+            } catch {
+                /* nothing playing */
             }
-            swing.pause();
+            audioCtxRef.current?.close().catch(() => {});
         };
     }, []);
-
-    const ensureAudioSmoothingLoop = () => {
-        if (audioRafRef.current != null) return;
-
-        const tick = () => {
-            const swing = swingAudioRef.current;
-            audioPeakRef.current *= AUDIO_PEAK_DECAY;
-            const target = audioPeakRef.current;
-            audioDisplayRef.current += (target - audioDisplayRef.current) * AUDIO_DISPLAY_LERP;
-
-            if (swing) {
-                const d = audioDisplayRef.current;
-                if (d > 0.012) {
-                    if (swing.paused) {
-                        swing.play().catch(() => {});
-                    }
-                    swing.volume = Math.min(0.42, d * 0.5);
-                    swing.playbackRate = 0.9 + d * 0.28;
-                } else {
-                    swing.volume = 0;
-                }
-            }
-
-            const keepGoing =
-                dragActiveForAudioRef.current ||
-                audioPeakRef.current > 0.004 ||
-                audioDisplayRef.current > 0.015;
-            if (keepGoing) {
-                audioRafRef.current = requestAnimationFrame(tick);
-            } else {
-                audioRafRef.current = null;
-            }
-        };
-
-        audioRafRef.current = requestAnimationFrame(tick);
-    };
-
-    const bumpDragAudioFromAngle = (angle: number) => {
-        const bump = Math.min(1, angle * ANGLE_TO_AUDIO_PEAK);
-        audioPeakRef.current = Math.max(audioPeakRef.current, bump);
-        ensureAudioSmoothingLoop();
-    };
 
     const pointerToArcball = (e: React.PointerEvent) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -144,7 +186,6 @@ export default function HeroAttraction() {
 
     const onAttractionPointerDown = (e: React.PointerEvent) => {
         e.currentTarget.setPointerCapture(e.pointerId);
-        dragActiveForAudioRef.current = true;
         const ir = attractionInteractionRef.current;
         ir.dragging = true;
         const v = pointerToArcball(e);
@@ -161,13 +202,8 @@ export default function HeroAttraction() {
         tap.startTime = performance.now();
         tap.travel = 0;
 
-        // Warm up audio to unlock browser autoplay policy
-        if (swingAudioRef.current && swingAudioRef.current.paused) {
-            swingAudioRef.current.volume = 0;
-            swingAudioRef.current.play().then(() => {
-                swingAudioRef.current?.pause();
-            }).catch(() => {});
-        }
+        // Unlock/prime the AudioContext on the user gesture so the zoom SFX can play.
+        ensureZoomAudioReady();
     };
 
     const onAttractionPointerMove = (e: React.PointerEvent) => {
@@ -200,8 +236,6 @@ export default function HeroAttraction() {
             ir.pendingX += ax * invAxisLen * angle;
             ir.pendingY += ay * invAxisLen * angle;
             ir.pendingZ += az * invAxisLen * angle;
-
-            bumpDragAudioFromAngle(angle);
         }
 
         ir.prevArcX = cx;
@@ -213,8 +247,6 @@ export default function HeroAttraction() {
         const ir = attractionInteractionRef.current;
         ir.dragging = false;
         ir.hasPrevArc = false;
-        dragActiveForAudioRef.current = false;
-        ensureAudioSmoothingLoop();
 
         try {
             e.currentTarget.releasePointerCapture(e.pointerId);
@@ -238,11 +270,11 @@ export default function HeroAttraction() {
     };
 
     return (
-        <div className="w-full flex items-center justify-center">
+        <div className="w-full flex items-center justify-center lg:h-full lg:min-h-0">
             <CrossingCornerBorder
                 bleed="clamp(3px, 0.3125vw, 6px)"
                 thickness="clamp(1px, 0.052vw, 1.5px)"
-                className="w-full aspect-square max-h-[25vh] lg:max-h-[32vh]"
+                className="w-full aspect-square max-h-[25vh] lg:aspect-auto lg:h-full lg:max-h-none"
             >
                 <div
                     className={`w-full h-full flex items-center justify-center relative group overflow-hidden transition-colors duration-300 ${
@@ -302,7 +334,7 @@ export default function HeroAttraction() {
                             isAnyAttractionHovered && !showNowPlaying ? "opacity-100" : "opacity-0"
                         }`}
                     >
-                        Spotify
+                        spotify
                     </span>
 
                     {/* Spotify tracklist: renders directly inside the icosphere (no box); backdrop click closes */}

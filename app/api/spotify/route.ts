@@ -51,7 +51,7 @@ export async function GET() {
   if (nowRes.status === 200) {
     const d = await nowRes.json();
     if (d?.item && d.is_playing && d.currently_playing_type === "track") {
-      nowPlaying = shape(d.item);
+      nowPlaying = { ...shape(d.item), progressMs: d.progress_ms ?? 0 };
     }
   }
 

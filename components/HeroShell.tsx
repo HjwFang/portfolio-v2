@@ -22,8 +22,8 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
         {/* Sidebar (Desktop) / Header Area (Mobile) */}
         <div className="flex flex-col lg:w-fit lg:h-screen lg:sticky lg:top-0 justify-between z-20">
           <div className="flex-1 flex flex-col border-x border-b lg:border-b-0 border-foreground/10 bg-foreground/2 px-[clamp(24px,4.635vw,89px)] pb-[clamp(32px,5vh,48px)] lg:pb-0">
-            <header className="shrink-0 pt-[7vh] sm:pt-[10vh]">
-              <div className="flex w-fit flex-col items-start">
+            <header className="pt-[7vh] sm:pt-[10vh] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+              <div className="flex w-fit flex-col items-start lg:min-h-0 lg:flex-1">
                 <div className="content-stretch flex flex-col sm:flex-row items-start sm:items-end justify-start gap-[clamp(18px,1.5vw,28px)] pointer-events-none">
                   <CascadeReveal step={HERO_CASCADE.cjk} className="shrink-0">
                     <CrossingCornerBorder
@@ -63,13 +63,16 @@ export default function HeroShell({ children }: { children?: React.ReactNode }) 
                   <HeroNav />
                 </CascadeReveal>
 
-                <CascadeReveal step={HERO_CASCADE.attraction} className="w-full mt-[clamp(28px,4.2vh,48px)]">
+                <CascadeReveal
+                  step={HERO_CASCADE.attraction}
+                  className="w-full mt-[clamp(28px,4.2vh,48px)] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col"
+                >
                   <HeroAttraction />
                 </CascadeReveal>
               </div>
             </header>
 
-            <div className="hidden lg:block pb-[5vh] mt-auto">
+            <div className="hidden lg:block pb-[5vh] lg:mt-[clamp(28px,4.2vh,48px)]">
               <FooterContent />
             </div>
           </div>

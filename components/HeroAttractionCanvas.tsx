@@ -16,7 +16,9 @@ const CAMERA_RESTING_FOV = 30;
 /** Zoomed camera: dollied inside the shell (FOV stays fixed to avoid a vertigo/dolly-zoom feel). */
 const CAMERA_ZOOMED_Z = 0.18;
 /** Higher = snappier easing toward the target. Critically damped, so it never overshoots. */
-const CAMERA_DAMP_RATE = 6;
+const CAMERA_DAMP_RATE_IN = 6;
+/** Slower pull-out so it lingers in step with the reversed zoom SFX. */
+const CAMERA_DAMP_RATE_OUT = 2.4;
 
 /** Stable identity so R3F only applies it once (no reset on re-render). */
 const CAMERA_CONFIG = {
@@ -38,7 +40,8 @@ function CameraZoomController({ active }: { active: boolean }) {
 
     useFrame((_, delta) => {
         const targetZ = active ? CAMERA_ZOOMED_Z : CAMERA_RESTING_Z;
-        const nextZ = THREE.MathUtils.damp(camera.position.z, targetZ, CAMERA_DAMP_RATE, delta);
+        const dampRate = active ? CAMERA_DAMP_RATE_IN : CAMERA_DAMP_RATE_OUT;
+        const nextZ = THREE.MathUtils.damp(camera.position.z, targetZ, dampRate, delta);
 
         if (Math.abs(nextZ - camera.position.z) > 1e-4) {
             camera.position.z = nextZ;
