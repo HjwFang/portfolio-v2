@@ -21,6 +21,7 @@ type SpotifyPayload = {
 
 /** Fresh enough for the widget; short so now-playing stays responsive. */
 const CACHE_TTL_MS = 15_000;
+const RECENT_MAX = 8;
 
 const STALE_FILE = process.env.VERCEL
   ? join("/tmp", "spotify-last-good.json")
@@ -28,11 +29,31 @@ const STALE_FILE = process.env.VERCEL
 
 const SEED = spotifySeed as SpotifyPayload;
 
-/** In-memory success cache (per server instance). */
-let memoryCache: { data: SpotifyPayload; freshUntil: number } | null = null;
-/** Only gate recently-played — currently-playing is a separate quota bucket. */
-let recentCooldownUntil = 0;
-let inflight: Promise<SpotifyPayload> | null = null;
+type TrackMemory = {
+  /** Last observed now-playing track (may include progressMs). */
+  lastNow: TrackPayload | null;
+  /** Rolling recently-played, including server-side promotions. */
+  recent: TrackPayload[];
+};
+
+type SpotifyGlobal = typeof globalThis & {
+  __spotifyTrackMemory?: TrackMemory;
+  __spotifyPayloadCache?: { data: SpotifyPayload; freshUntil: number };
+  __spotifyRecentCooldownUntil?: number;
+  __spotifyInflight?: Promise<SpotifyPayload> | null;
+};
+
+const g = globalThis as SpotifyGlobal;
+
+function getMemory(): TrackMemory {
+  if (!g.__spotifyTrackMemory) g.__spotifyTrackMemory = loadMemory();
+  return g.__spotifyTrackMemory;
+}
+
+function persistMemory(nowPlaying: TrackPayload | null, recent: TrackPayload[]) {
+  g.__spotifyTrackMemory = { lastNow: nowPlaying, recent };
+  writeStale({ nowPlaying, recent });
+}
 
 function getBasicAuth() {
   return Buffer.from(
@@ -59,10 +80,37 @@ function writeStale(data: SpotifyPayload) {
   }
 }
 
-function fallbackRecent(): TrackPayload[] {
+function withoutProgress(track: TrackPayload): TrackPayload {
+  const { progressMs: _p, ...rest } = track;
+  return rest;
+}
+
+function prependRecent(track: TrackPayload, recent: TrackPayload[]): TrackPayload[] {
+  const entry: TrackPayload = {
+    ...withoutProgress(track),
+    playedAt: track.playedAt ?? new Date().toISOString(),
+  };
+  return [entry, ...recent.filter((t) => t.id !== entry.id)].slice(0, RECENT_MAX);
+}
+
+function mergeRecent(preferred: TrackPayload[], fallback: TrackPayload[]): TrackPayload[] {
+  const seen = new Set<string>();
+  const out: TrackPayload[] = [];
+  for (const t of [...preferred, ...fallback]) {
+    if (!t?.id || seen.has(t.id)) continue;
+    seen.add(t.id);
+    out.push(t);
+    if (out.length === RECENT_MAX) break;
+  }
+  return out;
+}
+
+function loadMemory(): TrackMemory {
   const stale = readStale();
-  if (stale?.recent?.length) return stale.recent;
-  return SEED.recent;
+  return {
+    lastNow: stale?.nowPlaying ?? null,
+    recent: stale?.recent?.length ? stale.recent : [...SEED.recent],
+  };
 }
 
 async function getAccessToken() {
@@ -112,19 +160,21 @@ function shape(
 
 function noteRecentCooldown(res: Response) {
   const raw = Number(res.headers.get("Retry-After") || 60);
-  // Cap so a multi-hour ban doesn't freeze recently-played forever in-process;
-  // we still serve stale recent and keep polling currently-playing.
   const waitMs = Number.isFinite(raw)
     ? Math.min(Math.max(raw, 1) * 1000, 15 * 60_000)
     : 60_000;
-  recentCooldownUntil = Math.max(recentCooldownUntil, Date.now() + waitMs);
+  g.__spotifyRecentCooldownUntil = Math.max(
+    g.__spotifyRecentCooldownUntil ?? 0,
+    Date.now() + waitMs
+  );
 }
 
 async function fetchFromSpotify(): Promise<SpotifyPayload> {
+  const mem = getMemory();
   const token = await getAccessToken();
   const auth = { Authorization: `Bearer ${token}` };
 
-  const skipRecent = Date.now() < recentCooldownUntil;
+  const skipRecent = Date.now() < (g.__spotifyRecentCooldownUntil ?? 0);
 
   const nowPromise = fetch(
     "https://api.spotify.com/v1/me/player/currently-playing",
@@ -151,11 +201,10 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
       nowPlaying = { ...shape(d.item), progressMs: d.progress_ms ?? 0 };
     }
   } else if (nowRes.status === 429) {
-    // Unusual — currently-playing is usually fine; don't poison recent.
     noteRecentCooldown(nowRes);
   }
 
-  let recent: TrackPayload[] | null = null;
+  let liveRecent: TrackPayload[] | null = null;
   if (recentRes) {
     if (recentRes.status === 429) {
       noteRecentCooldown(recentRes);
@@ -166,81 +215,78 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
           played_at: string;
         }[];
       };
-      recent = [];
-      const seen = new Set(nowPlaying ? [nowPlaying.id] : []);
+      liveRecent = [];
       for (const it of recentJson.items ?? []) {
         if (!it?.track?.id) continue;
-        if (seen.has(it.track.id)) continue;
-        seen.add(it.track.id);
-        recent.push(shape(it.track, it.played_at));
-        if (recent.length === 8) break;
+        liveRecent.push(shape(it.track, it.played_at));
+        if (liveRecent.length === RECENT_MAX) break;
       }
     }
   }
 
-  // Prefer live recent; otherwise last-good / seed so the list never goes blank.
-  const recentFinal = recent ?? fallbackRecent();
+  // When the live track changes (or stops), remember the previous one server-side
+  // so every client — including prod — shares the same recent list.
+  const prevId = mem.lastNow?.id ?? null;
+  const nextId = nowPlaying?.id ?? null;
+  if (mem.lastNow && prevId !== nextId) {
+    mem.recent = prependRecent(mem.lastNow, mem.recent);
+  }
+
+  if (liveRecent) {
+    mem.recent = mergeRecent(liveRecent, mem.recent);
+  }
+
   const seen = new Set(nowPlaying ? [nowPlaying.id] : []);
-  const recentDeduped = recentFinal.filter((t) => {
+  const recent = mem.recent.filter((t) => {
     if (seen.has(t.id)) return false;
     seen.add(t.id);
     return true;
-  });
+  }).slice(0, RECENT_MAX);
 
-  const payload: SpotifyPayload = {
-    nowPlaying,
-    recent: recentDeduped.slice(0, 8),
-  };
-
-  // Only persist when we have a live recent list (avoid writing seed as "fresh").
-  if (recent) {
-    writeStale(payload);
-  } else if (nowPlaying) {
-    // Keep last-good recent, but refresh nowPlaying in the file for next boot.
-    const stale = readStale();
-    writeStale({
-      nowPlaying,
-      recent: stale?.recent?.length ? stale.recent : payload.recent,
-    });
-  }
-
+  const payload: SpotifyPayload = { nowPlaying, recent };
+  persistMemory(nowPlaying, recent);
   return payload;
 }
 
 async function getPayload(): Promise<SpotifyPayload> {
   const now = Date.now();
-  if (memoryCache && memoryCache.freshUntil > now) {
-    return memoryCache.data;
+  const cached = g.__spotifyPayloadCache;
+  if (cached && cached.freshUntil > now) {
+    return cached.data;
   }
 
-  if (!inflight) {
-    inflight = fetchFromSpotify()
+  if (!g.__spotifyInflight) {
+    g.__spotifyInflight = fetchFromSpotify()
       .then((data) => {
-        memoryCache = { data, freshUntil: Date.now() + CACHE_TTL_MS };
+        g.__spotifyPayloadCache = {
+          data,
+          freshUntil: Date.now() + CACHE_TTL_MS,
+        };
         return data;
       })
       .finally(() => {
-        inflight = null;
+        g.__spotifyInflight = null;
       });
   }
 
   try {
-    return await inflight;
+    return await g.__spotifyInflight;
   } catch {
-    if (memoryCache) return memoryCache.data;
-    const stale = readStale();
-    if (stale && (stale.nowPlaying || stale.recent.length > 0)) return stale;
-    return SEED;
+    if (g.__spotifyPayloadCache) return g.__spotifyPayloadCache.data;
+    const mem = getMemory();
+    return { nowPlaying: null, recent: mem.recent };
   }
 }
 
 export async function GET() {
   const data = await getPayload();
-  const fromLiveRecent = Date.now() >= recentCooldownUntil;
   return Response.json(data, {
     headers: {
       "Cache-Control": "no-store",
-      "X-Spotify-Cache": fromLiveRecent ? "live" : "recent-stale",
+      "X-Spotify-Cache":
+        Date.now() >= (g.__spotifyRecentCooldownUntil ?? 0)
+          ? "live"
+          : "recent-remembered",
     },
   });
 }
