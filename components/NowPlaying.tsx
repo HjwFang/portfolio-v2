@@ -157,9 +157,7 @@ function Row({
     >
       <div
         data-live={highlight ? "true" : "false"}
-        className={`now-playing-row-shell group/row relative flex w-full transition-colors ${
-          highlight ? "" : "hover:bg-foreground/10 hover:text-foreground"
-        }`}
+        className="now-playing-row-shell group/row relative flex w-full"
       >
         {/* Crossing corner edges — fade via --border-color */}
         <div className="now-playing-row-edge pointer-events-none absolute top-0 left-0 h-px w-full" style={{ height: T }} />

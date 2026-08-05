@@ -296,6 +296,13 @@ body::-webkit-scrollbar {
   color: color-mix(in srgb, var(--color-foreground) 80%, transparent);
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .now-playing-row-shell[data-live="false"]:hover {
+    background-color: color-mix(in srgb, var(--color-foreground) 10%, transparent);
+    color: var(--color-foreground);
+  }
+}
+
 .now-playing-row-shell .now-playing-row-edge {
   background-color: var(--border-color);
   transition: background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1);
