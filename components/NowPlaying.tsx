@@ -1,8 +1,6 @@
 "use client";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
-import CrossingCornerBorder from "@/components/CrossingCornerBorder";
-
 // useLayoutEffect warns during SSR; fall back to useEffect on the server.
 const useIsoLayoutEffect =
   typeof window !== "undefined" ? useLayoutEffect : useEffect;
@@ -62,12 +60,16 @@ function SectionHeader({
   wave,
   cascadeStep = 0,
   reveal = true,
+  liveSwap = false,
 }: {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   wave?: boolean;
   cascadeStep?: number;
   reveal?: boolean;
+  /** When true, labels crossfade between last/now playing and the wave fades. */
+  liveSwap?: boolean;
 }) {
+  const isLive = !!wave;
   return (
     <div
       style={
@@ -81,17 +83,31 @@ function SectionHeader({
         reveal ? "now-playing-cascade " : ""
       }flex items-center`}
     >
-      <span
-        className="font-general font-medium leading-snug text-foreground whitespace-nowrap"
-        style={{ fontSize: "var(--np-label)" }}
-      >
-        {children}
-      </span>
-      {wave && (
-        <div className="min-w-0 flex-1 overflow-hidden">
+      {liveSwap ? (
+        <span
+          className="now-playing-label-swap font-general font-medium leading-snug text-foreground whitespace-nowrap"
+          style={{ fontSize: "var(--np-label)" }}
+        >
+          <span data-active={isLive ? "true" : "false"}>now playing</span>
+          <span data-active={isLive ? "false" : "true"}>last played</span>
+        </span>
+      ) : (
+        <span
+          className="font-general font-medium leading-snug text-foreground whitespace-nowrap"
+          style={{ fontSize: "var(--np-label)" }}
+        >
+          {children}
+        </span>
+      )}
+      {liveSwap ? (
+        <div
+          className="now-playing-wave-slot"
+          data-active={isLive ? "true" : "false"}
+          aria-hidden={!isLive}
+        >
           <SoundWave />
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
@@ -107,86 +123,83 @@ function Row({
   highlight?: boolean;
   reveal?: boolean;
 }) {
-  const content = (
-    <a
-      href={track.url}
-      target="_blank"
-      rel="noreferrer"
-      style={{ gap: "var(--np-row-gap)", padding: "var(--np-row-pad)" }}
-      className={`group/row flex w-full items-center justify-between transition-colors ${
-        highlight
-          ? "text-background"
-          : "text-foreground/80 hover:bg-foreground/10 hover:text-foreground"
-      }`}
-    >
-      <span
-        className="flex min-w-0 flex-1 items-center"
-        style={{ gap: "var(--np-row-gap)" }}
-      >
-        <img
-          src={track.albumArt}
-          alt=""
-          className="aspect-square object-cover shrink-0"
-          style={{
-            width: "var(--np-art)",
-            height: "var(--np-art)",
-          }}
-        />
-        <span className="min-w-0 flex-1">
-          <span
-            className="block truncate font-general"
-            style={{ fontSize: "var(--np-title)" }}
-          >
-            {track.title}
-          </span>
-          <span
-            className={`block truncate font-quicksand font-medium leading-snug ${
-              highlight ? "text-background/70" : "text-foreground/60"
-            }`}
-            style={{ fontSize: "var(--np-artist)" }}
-          >
-            {track.artist}
-          </span>
-        </span>
-      </span>
-      <span
-        className={`shrink-0 font-quicksand opacity-70 ${
-          highlight ? "visible" : "invisible group-hover/row:visible"
-        }`}
-        style={{ fontSize: "var(--np-meta)" }}
-        aria-hidden
-      >
-        »»
-      </span>
-    </a>
-  );
-
-  if (highlight) {
-    return (
-      <div
-        data-flip-id={track.id}
-        style={{ "--cascade-step": cascadeStep } as React.CSSProperties}
-        className={`${reveal ? "now-playing-cascade " : ""}w-full`}
-      >
-        <CrossingCornerBorder
-          color="#c4a484"
-          bleed="var(--np-bleed)"
-          thickness="1px"
-          className="flex w-full bg-foreground"
-        >
-          {content}
-        </CrossingCornerBorder>
-      </div>
-    );
-  }
+  const L = "var(--np-bleed)";
+  const T = "1px";
+  const negL = "calc(-1 * var(--np-bleed))";
 
   return (
     <div
       data-flip-id={track.id}
       style={{ "--cascade-step": cascadeStep } as React.CSSProperties}
-      className={`${reveal ? "now-playing-cascade " : ""}flex w-full`}
+      className={`${reveal ? "now-playing-cascade " : ""}w-full`}
     >
-      {content}
+      <div
+        data-live={highlight ? "true" : "false"}
+        className={`now-playing-row-shell group/row relative flex w-full transition-colors ${
+          highlight ? "" : "hover:bg-foreground/10 hover:text-foreground"
+        }`}
+      >
+        {/* Crossing corner edges — fade via --border-color */}
+        <div className="now-playing-row-edge pointer-events-none absolute top-0 left-0 h-px w-full" style={{ height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute bottom-0 left-0 w-full" style={{ height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute top-0 left-0 h-full" style={{ width: T }} />
+        <div
+          className="now-playing-row-edge pointer-events-none absolute top-0 left-full h-full -translate-x-full"
+          style={{ width: T }}
+        />
+        <div className="now-playing-row-edge pointer-events-none absolute top-0" style={{ left: negL, width: L, height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute left-0" style={{ top: negL, width: T, height: L }} />
+        <div className="now-playing-row-edge pointer-events-none absolute top-0" style={{ right: negL, width: L, height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute right-0" style={{ top: negL, width: T, height: L }} />
+        <div className="now-playing-row-edge pointer-events-none absolute bottom-0" style={{ left: negL, width: L, height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute left-0" style={{ bottom: negL, width: T, height: L }} />
+        <div className="now-playing-row-edge pointer-events-none absolute bottom-0" style={{ right: negL, width: L, height: T }} />
+        <div className="now-playing-row-edge pointer-events-none absolute right-0" style={{ bottom: negL, width: T, height: L }} />
+
+        <a
+          href={track.url}
+          target="_blank"
+          rel="noreferrer"
+          style={{ gap: "var(--np-row-gap)", padding: "var(--np-row-pad)" }}
+          className="flex w-full items-center justify-between"
+        >
+          <span
+            className="flex min-w-0 flex-1 items-center"
+            style={{ gap: "var(--np-row-gap)" }}
+          >
+            <img
+              src={track.albumArt}
+              alt=""
+              className="aspect-square object-cover shrink-0"
+              style={{
+                width: "var(--np-art)",
+                height: "var(--np-art)",
+              }}
+            />
+            <span className="min-w-0 flex-1">
+              <span
+                className="block truncate font-general"
+                style={{ fontSize: "var(--np-title)" }}
+              >
+                {track.title}
+              </span>
+              <span
+                className="now-playing-row-artist block truncate font-quicksand font-medium leading-snug"
+                style={{ fontSize: "var(--np-artist)" }}
+              >
+                {track.artist}
+              </span>
+            </span>
+          </span>
+          <span
+            className="now-playing-row-chevron shrink-0 font-quicksand"
+            style={{ fontSize: "var(--np-meta)" }}
+            aria-hidden
+          >
+            »»
+          </span>
+        </a>
+      </div>
     </div>
   );
 }
@@ -451,9 +464,12 @@ export function NowPlaying() {
       style={{ gap: "var(--np-gap)" }}
     >
       <div className="flex flex-col">
-        <SectionHeader wave={!!data.nowPlaying} cascadeStep={step++} reveal={reveal}>
-          {data.nowPlaying ? "now playing" : "last played"}
-        </SectionHeader>
+        <SectionHeader
+          liveSwap
+          wave={!!data.nowPlaying}
+          cascadeStep={step++}
+          reveal={reveal}
+        />
         <Row
           track={featured}
           cascadeStep={step++}
