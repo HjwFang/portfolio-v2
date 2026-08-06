@@ -13,6 +13,7 @@ type Track = {
   url: string;
   playedAt?: string;
   progressMs?: number;
+  isPlaying?: boolean;
 };
 
 const MIN_PLAY_MS = 30_000;
@@ -472,14 +473,14 @@ export function NowPlaying() {
       <div className="flex flex-col">
         <SectionHeader
           liveSwap
-          wave={!!data.nowPlaying}
+          wave={!!data.nowPlaying && data.nowPlaying.isPlaying !== false}
           cascadeStep={step++}
           reveal={reveal}
         />
         <Row
           track={featured}
           cascadeStep={step++}
-          highlight={!!data.nowPlaying}
+          highlight={!!data.nowPlaying && data.nowPlaying.isPlaying !== false}
           reveal={reveal}
         />
       </div>

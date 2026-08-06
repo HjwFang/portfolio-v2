@@ -12,6 +12,8 @@ type TrackPayload = {
   url: string;
   playedAt?: string;
   progressMs?: number;
+  /** False when Spotify still has this item but playback is paused. */
+  isPlaying?: boolean;
 };
 
 type SpotifyPayload = {
@@ -197,8 +199,14 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
       currently_playing_type?: string;
       progress_ms?: number;
     };
-    if (d?.item && d.is_playing && d.currently_playing_type === "track") {
-      nowPlaying = { ...shape(d.item), progressMs: d.progress_ms ?? 0 };
+    // Keep the current item even when paused so we don't lose it before a skip,
+    // and so progressMs keeps updating for promotion / FLIP.
+    if (d?.item && d.currently_playing_type === "track") {
+      nowPlaying = {
+        ...shape(d.item),
+        progressMs: d.progress_ms ?? 0,
+        isPlaying: !!d.is_playing,
+      };
     }
   } else if (nowRes.status === 429) {
     noteRecentCooldown(nowRes);
@@ -224,16 +232,17 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
     }
   }
 
-  // When the live track changes (or stops), remember the previous one server-side
-  // so every client — including prod — shares the same recent list.
+  // Spotify's recently-played feed lags (and skips short plays). Merge it first,
+  // then prepend our own observation so a just-finished track can't be dropped
+  // when Spotify returns a full page that doesn't include it yet.
+  if (liveRecent) {
+    mem.recent = mergeRecent(liveRecent, mem.recent);
+  }
+
   const prevId = mem.lastNow?.id ?? null;
   const nextId = nowPlaying?.id ?? null;
   if (mem.lastNow && prevId !== nextId) {
     mem.recent = prependRecent(mem.lastNow, mem.recent);
-  }
-
-  if (liveRecent) {
-    mem.recent = mergeRecent(liveRecent, mem.recent);
   }
 
   const seen = new Set(nowPlaying ? [nowPlaying.id] : []);
