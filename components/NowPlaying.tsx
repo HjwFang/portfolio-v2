@@ -360,7 +360,7 @@ export function NowPlaying() {
     };
 
     load();
-    const id = setInterval(tick, 15_000);
+    const id = setInterval(tick, 10_000);
     document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;

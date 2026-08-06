@@ -28,7 +28,7 @@ export type StoredPayload = SpotifyPayload & {
  * How long a stored payload is considered fresh. This is the real rate limiter:
  * one Spotify refresh per interval no matter how many visitors are polling.
  */
-export const REFRESH_INTERVAL_S = 20;
+export const REFRESH_INTERVAL_S = 10;
 /**
  * recently-played is far more rate-limit sensitive than currently-playing.
  * Poll it sparingly; server-side promotion keeps the list correct in between.
