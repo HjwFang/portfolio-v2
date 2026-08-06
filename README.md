@@ -40,6 +40,29 @@ Copy these into `.env` (or pull from Vercel). Spotify/Redis are optional for loc
 | `KV_REST_API_TOKEN` | Upstash Redis REST token (prod) |
 | `CRON_SECRET` | Bearer token for `GET /api/spotify/refresh` |
 
+## Keeping the Spotify widget warm (optional)
+
+The read route (`GET /api/spotify`) self-refreshes on visits, so the cache is
+always fresh while someone has the page open — no cron is required. To also keep
+it current while the site has **no visitors**, point an external scheduler at the
+refresh route on a schedule (Vercel's built-in Hobby cron only allows once/day,
+so an external scheduler is the free way to get frequent updates):
+
+```
+GET https://<your-domain>/api/spotify/refresh
+Authorization: Bearer <CRON_SECRET>
+```
+
+1. Set `CRON_SECRET` in Vercel → Project → Settings → Environment Variables
+   (Production), then redeploy so the deployed function can read it.
+2. Create a free job on [cron-job.org](https://cron-job.org) (or GitHub Actions):
+   - **URL:** `https://<your-domain>/api/spotify/refresh`
+   - **Schedule:** every 5 min is plenty (`recently-played` is internally gated
+     to once / 10 min regardless)
+   - **Header:** `Authorization: Bearer <CRON_SECRET>`
+
+A `200 {"ok":true}` means it refreshed; `401` means the bearer token is wrong.
+
 ## Structure
 
 ```
