@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
-import spotifySeed from "@/lib/spotifySeed.json";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +22,13 @@ type SpotifyPayload = {
 
 /** Fresh enough for the widget; short so now-playing stays responsive. */
 const CACHE_TTL_MS = 15_000;
+/** recently-played is rate-limited hard — poll it far less than currently-playing. */
+const RECENT_FETCH_TTL_MS = 5 * 60_000;
 const RECENT_MAX = 8;
 
 const STALE_FILE = process.env.VERCEL
   ? join("/tmp", "spotify-last-good.json")
   : join(process.cwd(), ".spotify-cache.json");
-
-const SEED = spotifySeed as SpotifyPayload;
 
 type TrackMemory = {
   /** Last observed now-playing track (may include progressMs). */
@@ -42,6 +41,7 @@ type SpotifyGlobal = typeof globalThis & {
   __spotifyTrackMemory?: TrackMemory;
   __spotifyPayloadCache?: { data: SpotifyPayload; freshUntil: number };
   __spotifyRecentCooldownUntil?: number;
+  __spotifyRecentFetchedAt?: number;
   __spotifyInflight?: Promise<SpotifyPayload> | null;
 };
 
@@ -78,12 +78,12 @@ function writeStale(data: SpotifyPayload) {
   try {
     writeFileSync(STALE_FILE, JSON.stringify(data), "utf8");
   } catch {
-    /* ignore */
+    /* ignore — /tmp and local cache are best-effort */
   }
 }
 
 function withoutProgress(track: TrackPayload): TrackPayload {
-  const { progressMs: _p, ...rest } = track;
+  const { progressMs: _p, isPlaying: _i, ...rest } = track;
   return rest;
 }
 
@@ -101,7 +101,7 @@ function mergeRecent(preferred: TrackPayload[], fallback: TrackPayload[]): Track
   for (const t of [...preferred, ...fallback]) {
     if (!t?.id || seen.has(t.id)) continue;
     seen.add(t.id);
-    out.push(t);
+    out.push(withoutProgress(t));
     if (out.length === RECENT_MAX) break;
   }
   return out;
@@ -111,7 +111,7 @@ function loadMemory(): TrackMemory {
   const stale = readStale();
   return {
     lastNow: stale?.nowPlaying ?? null,
-    recent: stale?.recent?.length ? stale.recent : [...SEED.recent],
+    recent: Array.isArray(stale?.recent) ? stale.recent : [],
   };
 }
 
@@ -176,18 +176,24 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
   const token = await getAccessToken();
   const auth = { Authorization: `Bearer ${token}` };
 
-  const skipRecent = Date.now() < (g.__spotifyRecentCooldownUntil ?? 0);
+  const now = Date.now();
+  const recentCooldown = now < (g.__spotifyRecentCooldownUntil ?? 0);
+  const recentFresh =
+    g.__spotifyRecentFetchedAt != null &&
+    now - g.__spotifyRecentFetchedAt < RECENT_FETCH_TTL_MS;
+  // Always refresh recently-played when we have no list yet (cold start).
+  const needRecent = mem.recent.length === 0 || (!recentCooldown && !recentFresh);
 
   const nowPromise = fetch(
     "https://api.spotify.com/v1/me/player/currently-playing",
     { headers: auth, cache: "no-store" }
   );
-  const recentPromise = skipRecent
-    ? Promise.resolve(null)
-    : fetch("https://api.spotify.com/v1/me/player/recently-played?limit=20", {
+  const recentPromise = needRecent
+    ? fetch("https://api.spotify.com/v1/me/player/recently-played?limit=20", {
         headers: auth,
         cache: "no-store",
-      });
+      })
+    : Promise.resolve(null);
 
   const [nowRes, recentRes] = await Promise.all([nowPromise, recentPromise]);
 
@@ -217,6 +223,7 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
     if (recentRes.status === 429) {
       noteRecentCooldown(recentRes);
     } else if (recentRes.ok) {
+      g.__spotifyRecentFetchedAt = Date.now();
       const recentJson = (await recentRes.json()) as {
         items?: {
           track: Parameters<typeof shape>[0] | null;
@@ -235,7 +242,7 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
   // Spotify's recently-played feed lags (and skips short plays). Merge it first,
   // then prepend our own observation so a just-finished track can't be dropped
   // when Spotify returns a full page that doesn't include it yet.
-  if (liveRecent) {
+  if (liveRecent && liveRecent.length > 0) {
     mem.recent = mergeRecent(liveRecent, mem.recent);
   }
 
@@ -246,11 +253,13 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
   }
 
   const seen = new Set(nowPlaying ? [nowPlaying.id] : []);
-  const recent = mem.recent.filter((t) => {
-    if (seen.has(t.id)) return false;
-    seen.add(t.id);
-    return true;
-  }).slice(0, RECENT_MAX);
+  const recent = mem.recent
+    .filter((t) => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    })
+    .slice(0, RECENT_MAX);
 
   const payload: SpotifyPayload = { nowPlaying, recent };
   persistMemory(nowPlaying, recent);
@@ -283,7 +292,7 @@ async function getPayload(): Promise<SpotifyPayload> {
   } catch {
     if (g.__spotifyPayloadCache) return g.__spotifyPayloadCache.data;
     const mem = getMemory();
-    return { nowPlaying: null, recent: mem.recent };
+    return { nowPlaying: mem.lastNow, recent: mem.recent };
   }
 }
 
