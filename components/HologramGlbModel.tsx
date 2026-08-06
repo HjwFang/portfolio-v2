@@ -167,6 +167,8 @@ export default function HologramGlbModel({
         lastY: 0,
         startTime: 0,
         travel: 0,
+        /** True while a touch is down on the mesh (tap candidate; no drag). */
+        touchPending: false,
     });
     const onTapRef = useRef(onTap);
     const onGestureStartRef = useRef(onGestureStart);
@@ -269,10 +271,17 @@ export default function HologramGlbModel({
         };
 
         const onPointerMove = (e: PointerEvent) => {
+            const tap = tapTrackerRef.current;
+            if (tap.touchPending) {
+                tap.travel += Math.hypot(e.clientX - tap.lastX, e.clientY - tap.lastY);
+                tap.lastX = e.clientX;
+                tap.lastY = e.clientY;
+                return;
+            }
+
             const ir = interactionRef.current;
             if (!ir.dragging || !ir.hasPrevArc) return;
 
-            const tap = tapTrackerRef.current;
             tap.travel += Math.hypot(e.clientX - tap.lastX, e.clientY - tap.lastY);
             tap.lastX = e.clientX;
             tap.lastY = e.clientY;
@@ -303,7 +312,25 @@ export default function HologramGlbModel({
             ir.prevArcZ = cz;
         };
 
+        const finishTapIfNeeded = (e: PointerEvent) => {
+            const tap = tapTrackerRef.current;
+            const dist = Math.hypot(e.clientX - tap.startX, e.clientY - tap.startY);
+            const duration = performance.now() - tap.startTime;
+            const isTap =
+                tap.travel < CLICK_MAX_TRAVEL_PX &&
+                dist < CLICK_MAX_TRAVEL_PX &&
+                duration < CLICK_MAX_DURATION_MS;
+            if (isTap) onTapRef.current?.();
+        };
+
         const onPointerUp = (e: PointerEvent) => {
+            const tap = tapTrackerRef.current;
+            if (tap.touchPending) {
+                tap.touchPending = false;
+                if (e.type === "pointerup") finishTapIfNeeded(e);
+                return;
+            }
+
             const ir = interactionRef.current;
             if (!ir.dragging) return;
 
@@ -319,31 +346,49 @@ export default function HologramGlbModel({
                 /* capture may already be released */
             }
 
-            if (e.type === "pointerup") {
-                const tap = tapTrackerRef.current;
-                const dist = Math.hypot(e.clientX - tap.startX, e.clientY - tap.startY);
-                const duration = performance.now() - tap.startTime;
-                const isTap =
-                    tap.travel < CLICK_MAX_TRAVEL_PX &&
-                    dist < CLICK_MAX_TRAVEL_PX &&
-                    duration < CLICK_MAX_DURATION_MS;
-                if (isTap) onTapRef.current?.();
-            }
+            if (e.type === "pointerup") finishTapIfNeeded(e);
         };
 
         el.addEventListener("pointermove", onPointerMove);
         el.addEventListener("pointerup", onPointerUp);
         el.addEventListener("pointercancel", onPointerUp);
+        // Touch taps don't use setPointerCapture, so up/cancel may land outside the canvas.
+        window.addEventListener("pointerup", onPointerUp);
+        window.addEventListener("pointercancel", onPointerUp);
         return () => {
             el.removeEventListener("pointermove", onPointerMove);
             el.removeEventListener("pointerup", onPointerUp);
             el.removeEventListener("pointercancel", onPointerUp);
+            window.removeEventListener("pointerup", onPointerUp);
+            window.removeEventListener("pointercancel", onPointerUp);
             el.style.cursor = "";
         };
     }, [gl, interactionRef]);
 
     const onMeshPointerDown = (e: ThreeEvent<PointerEvent>) => {
         e.stopPropagation();
+
+        const tap = tapTrackerRef.current;
+        tap.startX = e.clientX;
+        tap.startY = e.clientY;
+        tap.lastX = e.clientX;
+        tap.lastY = e.clientY;
+        tap.startTime = performance.now();
+        tap.travel = 0;
+
+        onGestureStartRef.current?.();
+
+        // Touch: track for tap only — don't capture or drag, so the page can scroll.
+        if (e.pointerType === "touch") {
+            const ir = interactionRef.current;
+            ir.dragging = false;
+            ir.hasPrevArc = false;
+            tap.touchPending = true;
+            return;
+        }
+
+        tap.touchPending = false;
+
         const el = gl.domElement;
         el.setPointerCapture(e.pointerId);
         setCanvasCursor("grabbing");
@@ -355,16 +400,6 @@ export default function HologramGlbModel({
         ir.prevArcY = v.y;
         ir.prevArcZ = v.z;
         ir.hasPrevArc = true;
-
-        const tap = tapTrackerRef.current;
-        tap.startX = e.clientX;
-        tap.startY = e.clientY;
-        tap.lastX = e.clientX;
-        tap.lastY = e.clientY;
-        tap.startTime = performance.now();
-        tap.travel = 0;
-
-        onGestureStartRef.current?.();
     };
 
     const onMeshPointerOver = (e: ThreeEvent<PointerEvent>) => {
