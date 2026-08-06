@@ -184,7 +184,7 @@ async function findPaperBbox(rotatedBuffer, fullW, fullH) {
  * The result is always clipped to the paper boundary — no mark is ever cut.
  */
 function tightenToMarks(
-  { data, W, H, pMinX, pMinY, pMaxX, pMaxY },
+  { data, W, pMinX, pMinY, pMaxX, pMaxY },
 ) {
   // Paper brightness reference: 75th percentile of pixels in the paper region.
   const paperPx = [];

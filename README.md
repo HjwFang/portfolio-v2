@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# portfolio-v2
 
-## Getting Started
+Personal site for **horst fang** — SYDE @ UWaterloo.
 
-First, run the development server:
+Next.js App Router portfolio with a cream/brown visual system, interactive 3D hero, experience & project grids, art gallery, and a Spotify widget.
+
+## Stack
+
+- **Next.js 16** / React 19 / TypeScript / Tailwind CSS 4
+- **Three.js** + React Three Fiber / Drei (hero models)
+- **Upstash Redis** (Spotify cache; in-memory fallback in local dev)
+- **Vitest** + ESLint (CI on `master`)
+- **Vercel Analytics**
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run build   # production build
+npm run lint    # eslint
+npm run test    # vitest
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Environment
 
-## Learn More
+Copy these into `.env` (or pull from Vercel). Spotify/Redis are optional for local UI work — the now-playing widget degrades without them.
 
-To learn more about Next.js, take a look at the following resources:
+| Variable | Purpose |
+| :--- | :--- |
+| `SPOTIFY_CLIENT_ID` | Spotify app client ID |
+| `SPOTIFY_CLIENT_SECRET` | Spotify app secret |
+| `SPOTIFY_REFRESH_TOKEN` | User refresh token for currently/recently played |
+| `KV_REST_API_URL` | Upstash Redis REST URL (prod) |
+| `KV_REST_API_TOKEN` | Upstash Redis REST token (prod) |
+| `CRON_SECRET` | Bearer token for `GET /api/spotify/refresh` |
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+app/            pages + API routes (Spotify)
+components/     UI, hero, gallery, motion
+lib/            portfolio content, Spotify cache, helpers
+public/         images, art, 3D models, sounds
+scripts/        art pipeline (clean / webp / sizes / exif)
+design.md       color & type source of truth
+```
 
-## Deploy on Vercel
+Content for experience and projects lives in `lib/portfolioContent.ts`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Design
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Warm cream background (`#fffeee`), dark brown type (`#502e2e`), General Sans + Quicksand. See [`design.md`](./design.md) for the full palette and type specs.

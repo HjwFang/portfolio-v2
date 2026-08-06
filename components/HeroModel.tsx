@@ -107,7 +107,10 @@ function Model() {
     }, [hologramMaterial]);
 
     useFrame((state, delta) => {
-        // Drive shader time.
+        // Drive shader time. useFrame runs outside React's render/commit cycle,
+        // so mutating this useMemo'd three.js material is the standard r3f
+        // animation-loop pattern, not a render-safety violation.
+        // eslint-disable-next-line react-hooks/immutability
         hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
         hologramMaterial.uniforms.uColor.value.copy(themeColor);
 

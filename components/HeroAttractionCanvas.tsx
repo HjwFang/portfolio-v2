@@ -44,6 +44,9 @@ function MobilePageScrollTouchAction() {
         const el = gl.domElement;
         const mq = window.matchMedia("(min-width: 768px)");
         const apply = () => {
+            // Runs only inside this effect/listener, never during render, so
+            // mutating the canvas DOM element here is a safe imperative side effect.
+            // eslint-disable-next-line react-hooks/immutability
             el.style.touchAction = mq.matches ? "none" : "pan-y";
         };
         apply();
@@ -67,6 +70,10 @@ function CameraZoomController({ active }: { active: boolean }) {
         const nextZ = THREE.MathUtils.damp(camera.position.z, targetZ, dampRate, delta);
 
         if (Math.abs(nextZ - camera.position.z) > 1e-4) {
+            // useFrame runs outside React's render/commit cycle, so mutating this
+            // useThree()-derived camera here is the standard r3f animation-loop
+            // pattern, not a render-safety violation.
+            // eslint-disable-next-line react-hooks/immutability
             camera.position.z = nextZ;
             camera.updateProjectionMatrix();
             invalidate();

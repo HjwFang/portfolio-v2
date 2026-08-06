@@ -54,7 +54,7 @@ function indexDistance(a: number, b: number, count: number) {
 function continuousIndexDistance(focus: number, index: number, count: number) {
   if (count <= 0) return 0;
   const f = ((focus % count) + count) % count;
-  let d = Math.abs(f - index);
+  const d = Math.abs(f - index);
   return Math.min(d, count - d);
 }
 
@@ -436,7 +436,9 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
   const introPlayedRef = useRef(false);
   const introStartRef = useRef<number | null>(null);
   const introEnabledRef = useRef(introEnabled);
-  introEnabledRef.current = introEnabled;
+  useLayoutEffect(() => {
+    introEnabledRef.current = introEnabled;
+  }, [introEnabled]);
 
   const segmentWidth = useMemo(
     () => pinnedSegmentWidth(pieces, stageHeight, stageWidth),
@@ -1070,6 +1072,11 @@ export default function ArtGallery({
           className="absolute h-0 w-0 -translate-x-1/2 -translate-y-1/2"
           style={{ left: PIVOT_LEFT, top: PIVOT_TOP }}
         >
+          {/* Write-then-read within the same render pass: once a card enters the
+              load radius it must stay hydrated (never unloads), and the very same
+              render needs to know that immediately to decide `loadImage` below —
+              an effect would lag a frame and flash unloaded cards back out. */}
+          {/* eslint-disable-next-line react-hooks/refs */}
           {sortedPieces.map((p, i) => {
             if (indexDistance(i, activeIndex, count) <= IMAGE_LOAD_RADIUS) {
               loadedImageIndicesRef.current.add(i);

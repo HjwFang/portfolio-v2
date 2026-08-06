@@ -27,7 +27,7 @@ function isFormElement(target: EventTarget | null): boolean {
 }
 
 export default function HeroNav() {
-  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [selectedIndex, setSelectedIndex] = useState(() => readHomeNavigationFromUrl().sectionIndex);
   const activeIndex = selectedIndex;
   const heroNavHoverCtx = useHeroNavHoverContext();
   const setContextHoveredIndex = heroNavHoverCtx?.setHoveredIndex;
@@ -41,11 +41,9 @@ export default function HeroNav() {
 
   useLayoutEffect(() => {
     if (hasRestoredFromUrl.current) return;
-    const { sectionIndex } = readHomeNavigationFromUrl();
     hasRestoredFromUrl.current = true;
-    setSelectedIndex(sectionIndex);
-    setContextHoveredIndex?.(sectionIndex);
-  }, [setContextHoveredIndex]);
+    setContextHoveredIndex?.(selectedIndex);
+  }, [selectedIndex, setContextHoveredIndex]);
 
   useEffect(() => {
     if (isFirstRender.current) {

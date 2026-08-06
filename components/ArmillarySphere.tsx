@@ -114,6 +114,10 @@ export default function ArmillarySphere({ interactionRef }: ArmillarySphereProps
 
     useFrame((state, delta) => {
         const t = state.clock.elapsedTime;
+        // useFrame runs outside React's render/commit cycle, so mutating this
+        // useMemo'd three.js material here is the standard r3f animation-loop
+        // pattern, not a render-safety violation the immutability rule assumes.
+        // eslint-disable-next-line react-hooks/immutability
         hologramMaterial.uniforms.uTime.value = t;
         hologramMaterial.uniforms.uColor.value.copy(themeColor);
 

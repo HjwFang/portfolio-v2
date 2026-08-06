@@ -349,12 +349,23 @@ export function NowPlaying() {
           liveRef.current = now;
         })
         .catch(() => {});
+
+    // The endpoint is a pure cache read, but this widget never unmounts once
+    // opened — so stop polling in background tabs instead of running forever.
+    const tick = () => {
+      if (document.visibilityState === "visible") load();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") load();
+    };
+
     load();
-    // Now-playing should feel live; server caches ~15s so this won't burn quota.
-    const id = setInterval(load, 15_000);
+    const id = setInterval(tick, 15_000);
+    document.addEventListener("visibilitychange", onVisible);
     return () => {
       cancelled = true;
       clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
     };
   }, []);
 

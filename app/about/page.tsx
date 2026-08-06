@@ -12,7 +12,7 @@ export default function AboutPage() {
         </div>
         <div className="max-w-[90vw]">
           <p className="mb-6 font-quicksand font-light leading-relaxed text-foreground/90 text-[clamp(0.9375rem,1.35vw,1.125rem)]">
-            hi! i'm horst fang, a systems design engineering student at uwaterloo.
+            hi! i&apos;m horst fang, a systems design engineering student at uwaterloo.
           </p>
           <p className="mb-6 font-quicksand font-light leading-relaxed text-foreground/90 text-[clamp(0.9375rem,1.35vw,1.125rem)]">
             on the technical side, i enjoy designing and building digital products. i care deeply about my craft and have a strong sense of detail and quality in the projects i work on.

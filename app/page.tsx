@@ -3,7 +3,7 @@
 import CascadeIn from "@/components/CascadeIn";
 import RankBadge from "@/components/RankBadge";
 import RevealImage from "@/components/RevealImage";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import HeroShell from "@/components/HeroShell";
 import PortfolioListCard from "@/components/PortfolioListCard";
@@ -155,12 +155,9 @@ const GAME_IMAGE_PRELOAD_SRCS = [
 function SectionRenderer() {
   const context = useHeroNavHoverContext();
   const index = context?.hoveredIndex ?? 0;
-  const [miscTab, setMiscTab] = useState<MiscTab>("art");
-
-  useLayoutEffect(() => {
-    const { miscTab: restoredTab } = readHomeNavigationFromUrl();
-    setMiscTab(restoredTab);
-  }, []);
+  const [miscTab, setMiscTab] = useState<MiscTab>(
+    () => readHomeNavigationFromUrl().miscTab
+  );
 
   const handleMiscTabChange = (tab: MiscTab) => {
     setMiscTab(tab);

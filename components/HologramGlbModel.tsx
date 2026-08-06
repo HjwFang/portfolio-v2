@@ -251,6 +251,9 @@ export default function HologramGlbModel({
     };
 
     const setCanvasCursor = (cursor: string) => {
+        // Only invoked from pointer event handlers, never during render, so
+        // mutating the canvas DOM element here is a safe imperative side effect.
+        // eslint-disable-next-line react-hooks/immutability
         gl.domElement.style.cursor = cursor;
     };
 
@@ -413,6 +416,10 @@ export default function HologramGlbModel({
     };
 
     useFrame((state, delta) => {
+        // useFrame runs outside React's render/commit cycle, so mutating these
+        // useMemo'd three.js materials here is the standard r3f animation-loop
+        // pattern, not a render-safety violation the immutability rule assumes.
+        // eslint-disable-next-line react-hooks/immutability
         hologramMaterial.uniforms.uTime.value = state.clock.elapsedTime;
         hologramMaterial.uniforms.uColor.value.copy(themeColor);
         edgeMaterial.color.copy(themeColor);
@@ -425,6 +432,7 @@ export default function HologramGlbModel({
             OPACITY_DAMP_RATE,
             delta,
         );
+        // eslint-disable-next-line react-hooks/immutability
         edgeMaterial.opacity = THREE.MathUtils.damp(
             edgeMaterial.opacity,
             targetEdge,

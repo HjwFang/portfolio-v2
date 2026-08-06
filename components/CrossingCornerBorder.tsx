@@ -19,7 +19,6 @@ export default function CrossingCornerBorder({
     cornerLength,
 }: CrossingCornerBorderProps) {
     const L = cornerLength ?? bleed;
-    const edge = { backgroundColor: color };
 
     const containerStyle = {
         '--border-color': color,

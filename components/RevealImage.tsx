@@ -82,7 +82,13 @@ export default function RevealImage({
   let revealClass = "";
   if (!revealed && !priority) {
     revealClass = "portfolio-image-reveal--pending";
-  } else if (!revealPlayedRef.current) {
+  } else if (
+    // Read-then-write during render is intentional here: it applies the
+    // fade-in class exactly once on the render that flips `revealed`,
+    // without the extra render/flash an effect-based flag would cause.
+    // eslint-disable-next-line react-hooks/refs
+    !revealPlayedRef.current
+  ) {
     revealPlayedRef.current = true;
     if (!priority) revealClass = "portfolio-image-reveal--shown";
   }

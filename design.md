@@ -28,7 +28,7 @@ This document serves as the source of truth for the design elements used in the 
 *   **Color:** `#502e2e`
 
 #### 2. Subtitle
-*   **Text:** `swe @QuickPOS, syde @uwaterloo`
+*   **Text:** `syde @uwaterloo`
 *   **Font Family:** `Quicksand`, `sans-serif`
 *   **Weight:** Light
 *   **Size:** `24px`

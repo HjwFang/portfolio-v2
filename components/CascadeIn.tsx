@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 function imageIsSettled(img: HTMLImageElement) {
   return img.complete;
@@ -58,7 +58,9 @@ export default function CascadeIn({ step, className, style, children, onReady }:
   const ref = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
+  useLayoutEffect(() => {
+    onReadyRef.current = onReady;
+  }, [onReady]);
 
   useEffect(() => {
     const el = ref.current;
