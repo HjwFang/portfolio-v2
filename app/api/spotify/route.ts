@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from "fs";
 import { join } from "path";
+import spotifySeed from "@/lib/spotifySeed.json";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ const RECENT_MAX = 8;
 const STALE_FILE = process.env.VERCEL
   ? join("/tmp", "spotify-last-good.json")
   : join(process.cwd(), ".spotify-cache.json");
+
+/** Temporary fallback while recently-played is rate-limited / cache is empty. */
+const SEED = spotifySeed as SpotifyPayload;
 
 type TrackMemory = {
   lastNow: TrackPayload | null;
@@ -150,7 +154,7 @@ function loadMemory(): TrackMemory {
   const stale = readStale();
   return {
     lastNow: stale?.nowPlaying ?? null,
-    recent: Array.isArray(stale?.recent) ? stale.recent : [],
+    recent: stale?.recent?.length ? stale.recent : [...SEED.recent],
   };
 }
 
@@ -162,7 +166,7 @@ function cachedPayload(): SpotifyPayload {
       ? mem.recent
       : stale?.recent?.length
         ? stale.recent
-        : [];
+        : [...SEED.recent];
   return {
     nowPlaying: mem.lastNow ?? stale?.nowPlaying ?? null,
     recent,
@@ -242,6 +246,7 @@ async function fetchFromSpotify(): Promise<SpotifyPayload> {
   if (mem.recent.length === 0) {
     const stale = readStale();
     if (stale?.recent?.length) mem.recent = stale.recent;
+    else mem.recent = [...SEED.recent];
   }
 
   // Hard stop: any prior 429 means serve cache only until Retry-After elapses.
