@@ -27,7 +27,7 @@ function isFormElement(target: EventTarget | null): boolean {
 }
 
 export default function HeroNav() {
-  const [selectedIndex, setSelectedIndex] = useState(() => readHomeNavigationFromUrl().sectionIndex);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const activeIndex = selectedIndex;
   const heroNavHoverCtx = useHeroNavHoverContext();
   const setContextHoveredIndex = heroNavHoverCtx?.setHoveredIndex;
@@ -41,9 +41,15 @@ export default function HeroNav() {
 
   useLayoutEffect(() => {
     if (hasRestoredFromUrl.current) return;
+    // Must stay an effect: `readHomeNavigationFromUrl` reads `window.location`,
+    // which doesn't exist during SSR — the server-rendered default has to match
+    // the first client render, then this syncs from the URL post-hydration.
+    const { sectionIndex } = readHomeNavigationFromUrl();
     hasRestoredFromUrl.current = true;
-    setContextHoveredIndex?.(selectedIndex);
-  }, [selectedIndex, setContextHoveredIndex]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSelectedIndex(sectionIndex);
+    setContextHoveredIndex?.(sectionIndex);
+  }, [setContextHoveredIndex]);
 
   useEffect(() => {
     if (isFirstRender.current) {

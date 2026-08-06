@@ -3,7 +3,7 @@
 import CascadeIn from "@/components/CascadeIn";
 import RankBadge from "@/components/RankBadge";
 import RevealImage from "@/components/RevealImage";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 
 import HeroShell from "@/components/HeroShell";
 import PortfolioListCard from "@/components/PortfolioListCard";
@@ -155,9 +155,16 @@ const GAME_IMAGE_PRELOAD_SRCS = [
 function SectionRenderer() {
   const context = useHeroNavHoverContext();
   const index = context?.hoveredIndex ?? 0;
-  const [miscTab, setMiscTab] = useState<MiscTab>(
-    () => readHomeNavigationFromUrl().miscTab
-  );
+  const [miscTab, setMiscTab] = useState<MiscTab>("art");
+
+  useLayoutEffect(() => {
+    // Must stay an effect: `readHomeNavigationFromUrl` reads `window.location`,
+    // which doesn't exist during SSR — the server-rendered default has to match
+    // the first client render, then this syncs from the URL post-hydration.
+    const { miscTab: restoredTab } = readHomeNavigationFromUrl();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMiscTab(restoredTab);
+  }, []);
 
   const handleMiscTabChange = (tab: MiscTab) => {
     setMiscTab(tab);

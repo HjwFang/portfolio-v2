@@ -19,8 +19,12 @@ export function parseMiscTab(slug: string | null | undefined): MiscTab {
   return MISC_TABS.includes(slug as MiscTab) ? (slug as MiscTab) : "art";
 }
 
-export function readHomeNavigationFromUrl(url: URL | Location = window.location) {
-  const params = new URLSearchParams(url.search);
+export function readHomeNavigationFromUrl(url?: URL | Location) {
+  // Defaulting to `window.location` must be gated — `useState(() => …)` runs during SSR.
+  const resolved =
+    url ??
+    (typeof window !== "undefined" ? window.location : new URL("http://localhost/"));
+  const params = new URLSearchParams(resolved.search);
   return {
     sectionIndex: sectionSlugToIndex(params.get("section")),
     miscTab: parseMiscTab(params.get("tab")),
