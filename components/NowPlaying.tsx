@@ -300,7 +300,7 @@ function NowPlayingSkeleton() {
   );
 }
 
-export function NowPlaying() {
+export function NowPlaying({ open = true }: { open?: boolean } = {}) {
   const [data, setData] = useState<{ nowPlaying: Track | null; recent: Track[] } | null>(null);
   // Latest observed live song — used only to detect transitions for FLIP.
   const liveRef = useRef<Track | null>(null);
@@ -312,8 +312,10 @@ export function NowPlaying() {
   // The track that just left "now playing" for "recently played" this update.
   // It gets the special fade-through (fade out, keep sliding, fade back in).
   const promotedIdRef = useRef<string | null>(null);
-  // Initial mount uses the CSS cascade reveal; afterwards FLIP owns motion.
-  const [revealed, setRevealed] = useState(false);
+  // The cascade reveal is armed by `open` (see below); afterwards FLIP owns
+  // motion. Start "revealed" so nothing animates while the panel is still
+  // hidden during the zoom-in — the open effect kicks off each cascade.
+  const [revealed, setRevealed] = useState(true);
 
   useEffect(() => {
     // Drop legacy per-browser promotions so every device shows the server list.
@@ -369,13 +371,18 @@ export function NowPlaying() {
     };
   }, []);
 
-  // Hand motion over from the one-time CSS cascade to FLIP once the initial
-  // reveal has finished playing (longest delayed row + its duration).
+  // Replay the staggered fade + translate cascade every time the panel opens,
+  // then hand motion over to FLIP once the reveal has finished playing (longest
+  // delayed row + its duration).
   // Max step ≈ 10 (featured + header + 8 recent) × 180ms + 1.1s anim ≈ 2.9s.
   useEffect(() => {
+    if (!open) return;
+    // Re-arm the cascade: dropping `revealed` re-adds `now-playing-cascade`,
+    // restarting the CSS animation, and keeps FLIP idle until it settles.
+    setRevealed(false);
     const t = setTimeout(() => setRevealed(true), 3200);
     return () => clearTimeout(t);
-  }, []);
+  }, [open]);
 
   // FLIP: after each render, compare every row's new position to where it was
   // last frame and play the inverse so re-ordering looks like real movement.

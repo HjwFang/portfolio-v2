@@ -249,14 +249,15 @@ export default function HeroAttraction() {
                         </button>
                         <div
                             onClick={(e) => e.stopPropagation()}
-                            className={`now-playing-scale min-h-0 flex-1 transition-all duration-500 ease-in-out ${
-                                tracklistVisible
-                                    ? "translate-y-0 opacity-100"
-                                    : "translate-y-2 opacity-0"
+                            className={`now-playing-scale min-h-0 flex-1 transition-opacity duration-500 ease-in-out ${
+                                tracklistVisible ? "opacity-100" : "opacity-0"
                             }`}
                         >
                             {/* Mount as soon as opened (prefetch during zoom); keep mounted after first open. */}
-                            {tracklistMounted || showNowPlaying ? <NowPlaying /> : null}
+                            {/* `open` re-arms the per-row cascade (fade + translate) on every reveal. */}
+                            {tracklistMounted || showNowPlaying ? (
+                                <NowPlaying open={tracklistVisible} />
+                            ) : null}
                         </div>
                     </div>
 
