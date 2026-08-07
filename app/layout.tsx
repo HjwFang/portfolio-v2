@@ -14,7 +14,7 @@ const generalSans = localFont({
 
 export const metadata: Metadata = {
   title: "horst fang",
-  description: "syde @uwaterloo",
+  description: "Personal portfolio of horst fang — systems design engineering @ uwaterloo.",
 };
 
 export const viewport: Viewport = {
