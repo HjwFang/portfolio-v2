@@ -5,6 +5,7 @@ import CascadeIn from "@/components/CascadeIn";
 import CrossingCornerBorder from "@/components/CrossingCornerBorder";
 import IndexedSelector from "@/components/IndexedSelector";
 import RevealImage from "@/components/RevealImage";
+import ArtLightbox, { type LightboxItem } from "@/components/ArtLightbox";
 import { IMAGE_BLUR_DATA_URL } from "@/lib/imagePlaceholder";
 import {
   artPieceYearSpans,
@@ -15,6 +16,18 @@ import {
   type ArtPieceYearSpan,
   type PinnedArtPiece,
 } from "@/app/misc/art-data";
+
+/** Pointer travel (px) under which a press counts as a tap rather than a drag. */
+const TAP_SLOP_PX = 6;
+
+/** Index stored on the art element a press started on, if any. */
+function artIndexFromTarget(target: EventTarget | null): number | null {
+  if (!(target instanceof Element)) return null;
+  const el = target.closest<HTMLElement>("[data-art-index]");
+  if (!el) return null;
+  const n = Number(el.dataset.artIndex);
+  return Number.isFinite(n) ? n : null;
+}
 
 // ─── roulette math ───────────────────────────────────────────────────────────
 
@@ -380,33 +393,37 @@ function pinnedIntroFade(elapsedMs: number) {
 
 const PinnedCarouselItem = memo(function PinnedCarouselItem({
   piece,
+  index,
   stageHeight,
   stageWidth,
 }: {
   piece: PinnedArtPiece;
+  index: number;
   stageHeight: number;
   stageWidth: number;
 }) {
   const { width, height } = pinnedSlideSize(piece, stageHeight, stageWidth);
 
   return (
-    <CrossingCornerBorder
-      bleed="clamp(4px,0.5vw,8px)"
-      thickness="clamp(1px,0.1vw,1.5px)"
-      className="inline-block shrink-0 leading-none text-foreground/20"
-    >
-      <RevealImage
-        src={`/art/pinned/${piece.file}`}
-        alt={piece.title ?? "Pinned art"}
-        width={width}
-        height={height}
-        wrapClassName="block leading-none"
-        className="block h-auto w-auto max-w-none"
-        sizes={`${width}px`}
-        placeholder="blur"
-        blurDataURL={IMAGE_BLUR_DATA_URL}
-      />
-    </CrossingCornerBorder>
+    <div className="shrink-0 cursor-zoom-in leading-none" data-art-index={index}>
+      <CrossingCornerBorder
+        bleed="clamp(4px,0.5vw,8px)"
+        thickness="clamp(1px,0.1vw,1.5px)"
+        className="inline-block shrink-0 leading-none text-foreground/20"
+      >
+        <RevealImage
+          src={`/art/pinned/${piece.file}`}
+          alt={piece.title ?? "Pinned art"}
+          width={width}
+          height={height}
+          wrapClassName="block leading-none"
+          className="block h-auto w-auto max-w-none"
+          sizes={`${width}px`}
+          placeholder="blur"
+          blurDataURL={IMAGE_BLUR_DATA_URL}
+        />
+      </CrossingCornerBorder>
+    </div>
   );
 });
 
@@ -416,11 +433,14 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
   stageWidth,
   active,
   introEnabled,
+  onOpen,
 }: {
   pieces: PinnedArtPiece[];
   stageHeight: number;
   stageWidth: number;
   active: boolean;
+  /** Called with the tapped piece's index (into `pieces`). */
+  onOpen: (index: number) => void;
   /** False while CascadeIn is still opacity-0 / delaying — intro waits for this. */
   introEnabled: boolean;
 }) {
@@ -433,6 +453,11 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
   const autoScrollRef = useRef(true);
   const draggingRef = useRef(false);
   const lastPointerXRef = useRef(0);
+  const tapStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
+  const onOpenRef = useRef(onOpen);
+  useLayoutEffect(() => {
+    onOpenRef.current = onOpen;
+  }, [onOpen]);
   const introPlayedRef = useRef(false);
   const introStartRef = useRef<number | null>(null);
   const introEnabledRef = useRef(introEnabled);
@@ -510,6 +535,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
       introPlayedRef.current = true;
       applyPinnedContentOpacity(trackRef.current, 1);
       lastPointerXRef.current = event.clientX;
+      tapStartRef.current = { x: event.clientX, y: event.clientY, target: event.target };
       velocityRef.current = 0;
       el.setPointerCapture(event.pointerId);
     };
@@ -529,6 +555,19 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
       if (el.hasPointerCapture(event.pointerId)) {
         el.releasePointerCapture(event.pointerId);
       }
+      const start = tapStartRef.current;
+      tapStartRef.current = null;
+      if (
+        event.type === "pointerup" &&
+        start &&
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) < TAP_SLOP_PX
+      ) {
+        const idx = artIndexFromTarget(start.target);
+        if (idx !== null && pieces.length > 0) {
+          velocityRef.current = 0;
+          onOpenRef.current(idx % pieces.length);
+        }
+      }
     };
 
     el.addEventListener("pointerdown", onPointerDown);
@@ -542,7 +581,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
       el.removeEventListener("pointerup", onPointerUp);
       el.removeEventListener("pointercancel", onPointerUp);
     };
-  }, [active, nudgeOffset]);
+  }, [active, nudgeOffset, pieces.length]);
 
   useEffect(() => {
     if (!active || segmentWidth <= 0) {
@@ -622,7 +661,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
         WebkitMaskImage: PINNED_SIDE_FEATHER_MASK,
         maskImage: PINNED_SIDE_FEATHER_MASK,
       } as React.CSSProperties}
-      aria-label="Pinned art carousel. Scroll or drag horizontally to browse pieces."
+      aria-label="Pinned art carousel. Scroll or drag horizontally to browse pieces; click a piece to enlarge it."
       role="region"
       tabIndex={0}
       onKeyDown={(event) => {
@@ -644,6 +683,7 @@ const PinnedArtCarousel = memo(function PinnedArtCarousel({
           <PinnedCarouselItem
             key={`${piece.file}-${i}`}
             piece={piece}
+            index={i}
             stageHeight={stageHeight}
             stageWidth={stageWidth}
           />
@@ -672,7 +712,8 @@ const ArtGalleryCard = memo(function ArtGalleryCard({
   return (
     <div
       ref={(el) => assignRef(index, el)}
-      className="absolute left-0 top-0"
+      className="absolute left-0 top-0 cursor-zoom-in"
+      data-art-index={index}
       style={{
         width: w,
         height: h,
@@ -762,6 +803,12 @@ export default function ArtGallery({
   });
 
   const [activeIndex, setActiveIndex] = useState(0);
+  /** Which list the enlarged view is browsing, and where; null = closed. */
+  const [lightbox, setLightbox] = useState<{ set: ArtGallerySection; index: number | null }>({
+    set: "other",
+    index: null,
+  });
+  const tapStartRef = useRef<{ x: number; y: number; target: EventTarget | null } | null>(null);
   /** Once true, every wheel card renders its image so the roulette is fully populated on first open. */
   const [hydrateAllImages, setHydrateAllImages] = useState(false);
   const [section, setSection] = useState<ArtGallerySection>("pinned");
@@ -951,6 +998,7 @@ export default function ArtGallery({
     const onPointerDown = (event: PointerEvent) => {
       draggingRef.current = true;
       lastPointerYRef.current = event.clientY;
+      tapStartRef.current = { x: event.clientX, y: event.clientY, target: event.target };
       velocityRef.current = 0;
       el.setPointerCapture(event.pointerId);
     };
@@ -969,6 +1017,16 @@ export default function ArtGallery({
         el.releasePointerCapture(event.pointerId);
       }
       startLoop();
+      const start = tapStartRef.current;
+      tapStartRef.current = null;
+      if (
+        event.type === "pointerup" &&
+        start &&
+        Math.hypot(event.clientX - start.x, event.clientY - start.y) < TAP_SLOP_PX
+      ) {
+        const idx = artIndexFromTarget(start.target);
+        if (idx !== null) setLightbox({ set: "other", index: idx });
+      }
     };
 
     el.addEventListener("pointerdown", onPointerDown);
@@ -1028,6 +1086,34 @@ export default function ArtGallery({
     }
   }, [section, applyWheelTransform, stopLoop]);
 
+  const otherLightboxItems = useMemo<LightboxItem[]>(
+    () =>
+      sortedPieces.map((p) => ({
+        src: `/art/cleaned/${p.file}`,
+        width: p.width,
+        height: p.height,
+        alt: p.title ?? "Art piece",
+        caption: [p.title, p.year].filter(Boolean).join(" · ") || undefined,
+      })),
+    [sortedPieces],
+  );
+  const pinnedLightboxItems = useMemo<LightboxItem[]>(
+    () =>
+      PINNED_ART_PIECES.map((p) => ({
+        src: `/art/pinned/${p.file}`,
+        width: p.width,
+        height: p.height,
+        alt: p.title ?? "Pinned art",
+        caption: p.title,
+      })),
+    [],
+  );
+  const openPinned = useCallback((index: number) => setLightbox({ set: "pinned", index }), []);
+  // Closing keeps `set`, so the right list stays mounted through the fade-out.
+  const handleLightboxIndex = useCallback((index: number | null) => {
+    setLightbox((prev) => ({ set: prev.set, index }));
+  }, []);
+
   const roulette = (
     <div
       className="absolute inset-0 min-w-0 overflow-hidden"
@@ -1055,7 +1141,7 @@ export default function ArtGallery({
           WebkitMaskImage: EDGE_FEATHER_MASK,
           maskImage: EDGE_FEATHER_MASK,
         }}
-        aria-label="Art roulette gallery. Scroll or drag vertically to browse pieces."
+        aria-label="Art roulette gallery. Scroll or drag vertically to browse pieces; click a piece or press Enter to enlarge it."
         role="region"
         tabIndex={0}
         onKeyDown={(event) => {
@@ -1065,6 +1151,9 @@ export default function ArtGallery({
           } else if (event.key === "ArrowUp" || event.key === "PageUp") {
             event.preventDefault();
             nudgeRotation(-angleStep);
+          } else if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (count > 0) setLightbox({ set: "other", index: activeIndexRef.current });
           }
         }}
       >
@@ -1137,8 +1226,9 @@ export default function ArtGallery({
             pieces={PINNED_ART_PIECES}
             stageHeight={stageMetrics.height}
             stageWidth={stageMetrics.width}
-            active={section === "pinned"}
+            active={section === "pinned" && lightbox.index === null}
             introEnabled={pinnedIntroEnabled}
+            onOpen={openPinned}
           />
         </div>
       </div>
@@ -1156,6 +1246,12 @@ export default function ArtGallery({
           showArrow={false}
         />
       </div>
+
+      <ArtLightbox
+        items={lightbox.set === "pinned" ? pinnedLightboxItems : otherLightboxItems}
+        index={lightbox.index}
+        onIndexChange={handleLightboxIndex}
+      />
     </div>
   );
 
