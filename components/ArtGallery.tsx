@@ -17,6 +17,11 @@ import {
   type PinnedArtPiece,
 } from "@/app/misc/art-data";
 
+/** Pieces are untitled — describe them by date only. */
+function artAlt(year?: number) {
+  return year ? `Sketchbook piece, ${year}` : "Sketchbook piece";
+}
+
 /** Pointer travel (px) under which a press counts as a tap rather than a drag. */
 const TAP_SLOP_PX = 6;
 
@@ -413,7 +418,7 @@ const PinnedCarouselItem = memo(function PinnedCarouselItem({
       >
         <RevealImage
           src={`/art/pinned/${piece.file}`}
-          alt={piece.title ?? "Pinned art"}
+          alt={artAlt(piece.year)}
           width={width}
           height={height}
           wrapClassName="block leading-none"
@@ -734,7 +739,7 @@ const ArtGalleryCard = memo(function ArtGalleryCard({
           {loadImage ? (
             <RevealImage
               src={`/art/cleaned/thumb/${piece.file}`}
-              alt={piece.title ?? "Art piece"}
+              alt={artAlt(piece.year)}
               fill
               // Thumbnails are already small, pre-optimized WebPs — skip the on-demand
               // optimizer so they render instantly and share the preload cache entry.
@@ -1092,8 +1097,8 @@ export default function ArtGallery({
         src: `/art/cleaned/${p.file}`,
         width: p.width,
         height: p.height,
-        alt: p.title ?? "Art piece",
-        caption: [p.title, p.year].filter(Boolean).join(" · ") || undefined,
+        alt: artAlt(p.year),
+        caption: p.year ? String(p.year) : undefined,
       })),
     [sortedPieces],
   );
@@ -1103,8 +1108,8 @@ export default function ArtGallery({
         src: `/art/pinned/${p.file}`,
         width: p.width,
         height: p.height,
-        alt: p.title ?? "Pinned art",
-        caption: p.title,
+        alt: artAlt(p.year),
+        caption: p.year ? String(p.year) : undefined,
       })),
     [],
   );

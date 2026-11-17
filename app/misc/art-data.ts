@@ -10,7 +10,6 @@
  *  - year:   the year the piece was made (used for grouping). Leave undefined
  *            if unknown so the piece falls into the "undated" bucket.
  *  - section: optional subsection title within a year (e.g. several stripes under 2021).
- *  - title:  short human label, otherwise the alt text falls back to "untitled".
  *  - displayRotateDeg: optional clockwise rotation in the gallery (-90, 90, or 180).
  */
 
@@ -24,7 +23,6 @@ export type ArtPiece = {
   year?: number;
   /** When set with `year`, pieces share a row group under this heading instead of the plain year. */
   section?: string;
-  title?: string;
   /** Display rotation so the sketch reads upright in the grid. */
   displayRotateDeg?: ArtDisplayRotateDeg;
 };
@@ -134,15 +132,16 @@ export type PinnedArtPiece = {
   file: string;
   width: number;
   height: number;
-  title?: string;
+  /** Year from the signature; omit if the piece isn't dated. */
+  year?: number;
 };
 
 export const PINNED_ART_PIECES: PinnedArtPiece[] = [
-  { file: "dancer.jpeg", width: 3024, height: 4032, title: "Dancer" },
-  { file: "head statue 1.jpeg", width: 3024, height: 4032, title: "Head statue 1" },
-  { file: "head statue 2.jpeg", width: 3024, height: 4032, title: "Head statue 2" },
-  { file: "vb mannequin.jpeg", width: 3024, height: 4032, title: "VB mannequin" },
-  { file: "winter gear.jpeg", width: 4029, height: 2676, title: "Winter gear" },
+  { file: "dancer.jpeg", width: 3024, height: 4032, year: 2023 },
+  { file: "head statue 1.jpeg", width: 3024, height: 4032, year: 2021 },
+  { file: "head statue 2.jpeg", width: 3024, height: 4032, year: 2021 },
+  { file: "vb mannequin.jpeg", width: 3024, height: 4032 },
+  { file: "winter gear.jpeg", width: 4029, height: 2676, year: 2022 },
 ];
 
 export function groupArtByYear(pieces: ArtPiece[]) {
