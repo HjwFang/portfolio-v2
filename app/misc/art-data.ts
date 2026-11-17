@@ -81,48 +81,48 @@ export function artPieceYearSpans(pieces: ArtPiece[]): ArtPieceYearSpan[] {
 export const ART_PIECES: ArtPiece[] = [
   // ── 2023 ──────────────────────────────────────────────────────────────────
   { file: "img_2077.webp", width: 1408, height: 1108, year: 2023 },
-  { file: "img_2062.webp", width: 1129, height: 1344, year: 2023 },
-  { file: "img_2063.webp", width: 1472, height: 1048, year: 2023 },
+  { file: "img_2062.webp", width: 1149, height: 1403, year: 2023 },
+  { file: "img_2063.webp", width: 1473, height: 1104, year: 2023 },
   { file: "img_2064.webp", width: 1568, height: 1034, year: 2023 },
   { file: "img_2065.webp", width: 972, height: 1248, year: 2023 },
-  { file: "img_2066.webp", width: 972, height: 1168, year: 2023 },
+  { file: "img_2066.webp", width: 1025, height: 1179, year: 2023 },
   { file: "img_2067.webp", width: 900, height: 1152, year: 2023 },
-  { file: "img_2068.webp", width: 1074, height: 1472, year: 2023 },
-  { file: "img_2074.webp", width: 1068, height: 1552, year: 2023 },
+  { file: "img_2068.webp", width: 1088, height: 1398, year: 2023 },
+  { file: "img_2074.webp", width: 1119, height: 1533, year: 2023 },
 
   // ── 2021 ──────────────────────────────────────────────────────────────────
   { file: "img_2069.webp", width: 1082, height: 1424, year: 2021 },
-  { file: "img_2070.webp", width: 1130, height: 1456, year: 2021 },
+  { file: "img_2070.webp", width: 1182, height: 1452, year: 2021 },
   { file: "img_2071.webp", width: 1182, height: 1392, year: 2021 },
-  { file: "img_2072.webp", width: 921, height: 1488, year: 2021 },
-  { file: "img_2073.webp", width: 865, height: 1360, year: 2021 },
+  { file: "img_2072.webp", width: 959, height: 1455, year: 2021 },
+  { file: "img_2073.webp", width: 929, height: 1392, year: 2021 },
   { file: "img_2056.webp", width: 1094, height: 1424, year: 2021 },
-  { file: "img_2058.webp", width: 1023, height: 1376, year: 2021 },
+  { file: "img_2058.webp", width: 1028, height: 1336, year: 2021 },
   { file: "img_2059.webp", width: 1049, height: 1248, year: 2021 },
   { file: "img_2060.webp", width: 1299, height: 1376, year: 2021 },
-  { file: "img_2061.webp", width: 1121, height: 1536, year: 2021 },
+  { file: "img_2061.webp", width: 1158, height: 1486, year: 2021 },
 
   // ── 2019 ──────────────────────────────────────────────────────────────────
-  { file: "img_2037.webp", width: 1504, height: 1047, year: 2019 },
-  { file: "img_2038.webp", width: 1207, height: 1280, year: 2019 },
-  { file: "img_2039.webp", width: 1232, height: 1213, year: 2019 },
-  { file: "img_2040.webp", width: 1207, height: 1440, year: 2019 },
-  { file: "img_2042.webp", width: 1232, height: 1075, year: 2019 },
-  { file: "img_2043.webp", width: 1260, height: 1376, year: 2019 },
-  { file: "img_2044.webp", width: 1125, height: 1376, year: 2019 },
-  { file: "img_2045.webp", width: 1545, height: 1472, year: 2019 },
-  { file: "img_2046.webp", width: 1160, height: 1134, year: 2019 },
-  { file: "img_2048.webp", width: 1264, height: 1152, year: 2019 },
-  { file: "img_2055.webp", width: 1376, height: 1214, year: 2019 },
+  { file: "img_2037.webp", width: 1364, height: 1089, year: 2019 },
+  { file: "img_2038.webp", width: 1127, height: 1185, year: 2019 },
+  { file: "img_2039.webp", width: 1209, height: 1170, year: 2019 },
+  { file: "img_2040.webp", width: 1108, height: 1432, year: 2019 },
+  { file: "img_2042.webp", width: 1305, height: 1110, year: 2019 },
+  { file: "img_2043.webp", width: 1276, height: 1386, year: 2019 },
+  { file: "img_2044.webp", width: 1140, height: 1330, year: 2019 },
+  { file: "img_2045.webp", width: 1520, height: 1397, year: 2019 },
+  { file: "img_2046.webp", width: 1247, height: 1180, year: 2019 },
+  { file: "img_2048.webp", width: 1287, height: 1147, year: 2019 },
+  { file: "img_2055.webp", width: 1300, height: 1221, year: 2019 },
 
   // ── 2018 ──────────────────────────────────────────────────────────────────
-  { file: "img_2051.webp", width: 1195, height: 1328, year: 2018 },
-  { file: "img_2052.webp", width: 1104, height: 1312, year: 2018 },
-  { file: "img_2053.webp", width: 1225, height: 1344, year: 2018 },
+  { file: "img_2051.webp", width: 1190, height: 1342, year: 2018 },
+  { file: "img_2052.webp", width: 1155, height: 1232, year: 2018 },
+  { file: "img_2053.webp", width: 1222, height: 1418, year: 2018 },
   { file: "img_2054.webp", width: 1176, height: 1312, year: 2018 },
 
   // ── 2017 ──────────────────────────────────────────────────────────────────
-  { file: "img_2050.webp", width: 1193, height: 1328, year: 2017 },
+  { file: "img_2050.webp", width: 1244, height: 1301, year: 2017 },
 ];
 
 /**
