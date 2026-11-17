@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
+import CrossingCornerBorder from "@/components/CrossingCornerBorder";
+import { useSwipeSound } from "@/lib/useSwipeSound";
 
 export type LightboxItem = {
   src: string;
@@ -61,6 +63,7 @@ export default function ArtLightbox({ items, index, onIndexChange }: Props) {
   const isOpen = index !== null;
   const count = items.length;
 
+  const playSwipe = useSwipeSound();
   const close = useCallback(() => onIndexChange(null), [onIndexChange]);
   const onBackdropClick = useCallback(() => {
     if (performance.now() - openedAtRef.current < OPEN_CLICK_GUARD_MS) return;
@@ -68,10 +71,11 @@ export default function ArtLightbox({ items, index, onIndexChange }: Props) {
   }, [close]);
   const step = useCallback(
     (dir: 1 | -1) => {
-      if (index === null || count === 0) return;
+      if (index === null || count < 2) return;
+      playSwipe();
       onIndexChange((index + dir + count) % count);
     },
-    [index, count, onIndexChange],
+    [index, count, onIndexChange, playSwipe],
   );
 
   // Scroll lock + focus: once per open, restored on close.
@@ -112,8 +116,7 @@ export default function ArtLightbox({ items, index, onIndexChange }: Props) {
   const item = items[shownIndex];
   if (!item) return null;
 
-  const btn =
-    "flex items-center justify-center rounded-full border border-foreground/20 bg-background/70 text-foreground/80 backdrop-blur-sm transition-colors hover:border-foreground/50 hover:text-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-foreground";
+  const pad = (n: number) => String(n).padStart(2, "0");
 
   return createPortal(
     <div
@@ -142,68 +145,120 @@ export default function ArtLightbox({ items, index, onIndexChange }: Props) {
         transition: `opacity ${CLOSE_MS}ms ease-out`,
       }}
     >
-      {/* Backdrop — click to close */}
+      {/* Cream paper wash — keeps the page's dot grid faintly visible. Click to close. */}
       <div
-        className="absolute inset-0 bg-background/90 backdrop-blur-md"
+        className="absolute inset-0 bg-background/[0.97] backdrop-blur-[3px]"
         onClick={onBackdropClick}
         aria-hidden
       />
 
       <figure
-        className="pointer-events-none relative z-10 m-0 flex max-h-full flex-col items-center px-4 py-14 sm:px-20"
+        className="pointer-events-none relative z-10 m-0 flex max-h-full flex-col items-center px-5 pb-24 pt-20 sm:px-24 sm:py-[clamp(56px,8vh,96px)]"
         style={{
-          transform: visible ? "scale(1)" : "scale(0.97)",
-          transition: `transform ${CLOSE_MS + 80}ms cubic-bezier(0.22, 1, 0.36, 1)`,
+          transform: visible ? "translateY(0)" : "translateY(10px)",
+          transition: `transform ${CLOSE_MS + 120}ms cubic-bezier(0.22, 1, 0.36, 1)`,
         }}
       >
-        <Image
-          key={item.src}
-          src={item.src}
-          alt={item.alt}
-          width={item.width}
-          height={item.height}
-          unoptimized
-          priority
-          className="pointer-events-auto block h-auto max-h-[calc(100dvh-8rem)] w-auto max-w-full select-none object-contain shadow-[0_8px_40px_rgba(80,46,46,0.18)]"
-          draggable={false}
-        />
-        <figcaption className="mt-3 font-general text-[13px] tracking-wide text-foreground/60">
-          {item.caption ? `${item.caption} · ` : ""}
-          {shownIndex + 1} / {count}
+        <CrossingCornerBorder
+          bleed="clamp(6px,0.6vw,10px)"
+          thickness="clamp(1px,0.1vw,1.5px)"
+          className="pointer-events-auto inline-block leading-none"
+        >
+          <Image
+            key={item.src}
+            src={item.src}
+            alt={item.alt}
+            width={item.width}
+            height={item.height}
+            unoptimized
+            priority
+            draggable={false}
+            className="block h-auto max-h-[calc(100dvh-11rem)] w-auto max-w-[calc(100vw-2.5rem)] select-none object-contain sm:max-h-[calc(100dvh-clamp(112px,16vh,192px)-3rem)] sm:max-w-[calc(100vw-12rem)]"
+          />
+        </CrossingCornerBorder>
+        <figcaption className="mt-[clamp(14px,1.6vh,22px)] flex items-baseline gap-[0.6em] whitespace-nowrap text-foreground">
+          <span className="font-quicksand text-[clamp(11px,0.677vw,13px)] opacity-70">
+            {pad(shownIndex + 1)} / {pad(count)}
+          </span>
+          {item.caption ? (
+            <span className="font-quicksand text-[clamp(14px,1vw,18px)] font-light">
+              {item.caption}
+            </span>
+          ) : null}
         </figcaption>
       </figure>
 
-      <button
-        ref={closeBtnRef}
-        type="button"
+      <LightboxButton
+        buttonRef={closeBtnRef}
         onClick={close}
-        aria-label="Close"
-        className={`${btn} absolute right-4 top-4 z-20 h-10 w-10 text-xl leading-none`}
+        label="Close"
+        className="right-5 top-5 sm:right-[clamp(20px,2.5vw,40px)] sm:top-[clamp(20px,2.5vw,40px)]"
       >
-        ×
-      </button>
+        <path d="M5 5l10 10M15 5L5 15" />
+      </LightboxButton>
 
       {count > 1 ? (
         <>
-          <button
-            type="button"
+          <LightboxButton
             onClick={() => step(-1)}
-            aria-label="Previous piece"
-            className={`${btn} absolute bottom-5 left-5 z-20 h-11 w-11 sm:bottom-auto sm:left-6 sm:top-1/2 sm:h-10 sm:w-10 sm:-translate-y-1/2`}
+            label="Previous piece"
+            className="bottom-6 left-5 sm:bottom-auto sm:left-[clamp(20px,2.5vw,40px)] sm:top-1/2 sm:-translate-y-1/2"
           >
-            ‹
-          </button>
-          <button
-            type="button"
+            <path d="M12.5 4.5L7 10l5.5 5.5" />
+          </LightboxButton>
+          <LightboxButton
             onClick={() => step(1)}
-            aria-label="Next piece"
-            className={`${btn} absolute bottom-5 right-5 z-20 h-11 w-11 sm:bottom-auto sm:right-6 sm:top-1/2 sm:h-10 sm:w-10 sm:-translate-y-1/2`}
+            label="Next piece"
+            className="bottom-6 right-5 sm:bottom-auto sm:right-[clamp(20px,2.5vw,40px)] sm:top-1/2 sm:-translate-y-1/2"
           >
-            ›
-          </button>
+            <path d="M7.5 4.5L13 10l-5.5 5.5" />
+          </LightboxButton>
         </>
       ) : null}
     </div>,
     document.body,
+  );
+}
+
+/** Dark-brown square control with crossing-corner border — same treatment as the social icons. */
+function LightboxButton({
+  onClick,
+  label,
+  className,
+  buttonRef,
+  children,
+}: {
+  onClick: () => void;
+  label: string;
+  className: string;
+  buttonRef?: React.Ref<HTMLButtonElement>;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      ref={buttonRef}
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className={`group absolute z-20 block transition-transform duration-300 active:scale-95 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[6px] focus-visible:outline-foreground ${className}`}
+    >
+      <CrossingCornerBorder
+        bleed="clamp(3px,0.26vw,5px)"
+        thickness="clamp(1px,0.052vw,1px)"
+        className="flex aspect-square items-center justify-center bg-foreground p-[clamp(8px,0.55vw,10px)] transition-all duration-300 group-hover:bg-[#7a4b4b] group-hover:[--border-color:#dec7b0]"
+      >
+        <svg
+          viewBox="0 0 20 20"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.6}
+          strokeLinecap="square"
+          className="size-[clamp(16px,1.1vw,20px)] text-background"
+          aria-hidden
+        >
+          {children}
+        </svg>
+      </CrossingCornerBorder>
+    </button>
   );
 }
